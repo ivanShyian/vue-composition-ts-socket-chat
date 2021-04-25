@@ -1,7 +1,7 @@
 <template>
   <div class="hidden md:flex mb-2 flex-auto border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-transparent overflow-hidden">
     <div class="flex md:flex-col md:justify-between flex-auto h-full">
-      <div class="border-b border-gray-700 px-2 py-3 bg-gray-800 flex justify-between">
+      <div class="border-b border-gray-700 px-4 py-3 bg-gray-800 flex justify-between">
         <span>Ivan Shyian</span>
         <span class="text-gray-500 text-sm">was online 1 hour ago</span>
       </div>
@@ -9,7 +9,7 @@
         id="message-container"
         class="h-full overflow-y-auto bg-gray-800 px-2 py-3 flex flex-col">
         <div
-          class="p-2 text-white dark:text-black flex justify-end"
+          class="p-2 text-white dark:text-black flex justify-end first:mt-auto"
           v-for="(m, i) in messages"
           :key="i"
         >
@@ -48,24 +48,30 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
+import { defineComponent, ref, Ref } from 'vue'
+import { useStore } from 'vuex'
+import { NewMessageObjectInterface } from './ChatsInterfaces'
+
 export default defineComponent({
   setup() {
-    const messages = ref([])
-    const messageText = ref('')
+    const store = useStore()
+    const messages: Ref<NewMessageObjectInterface[]> = ref([])
+    const messageText: Ref<string> = ref('')
 
     const sendMessage = (): void => {
       if (!messageText.value.length) {
         return
       }
+
       // TODO Temporary. Need to parse time depends of local
-      const newMessage = {
+      const newMessage: NewMessageObjectInterface = {
         uid: '213kqoeq',
         time: new Date().getTime(),
         message: messageText.value
       }
 
       messages.value.push(newMessage)
+      store.dispatch('socket/sendMessageSocket', newMessage)
       messageText.value = ''
     }
     return {

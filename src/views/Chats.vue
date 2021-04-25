@@ -1,11 +1,13 @@
 <template>
-  <div class="chats container md:pl-10 pt-14 md:pt-20 flex justify-between w-full">
+  <div class="chats container mx-auto md:pl-10 pt-14 md:pt-20 flex justify-between h-screen">
     <div
       id="card-container"
-      class="chats-card h-screen overflow-y-auto direction pr-4 mr-4">
+      class="chats-card overflow-y-auto direction pr-2 md:pr-4 md:mr-4 pb-20 md:pb-2"
+    >
       <chats-card
-        v-for="(card, i) in 10"
-        :key="i"></chats-card>
+        v-for="(card, i) in 5"
+        :key="i"
+      ></chats-card>
     </div>
     <router-view/>
   </div>
@@ -13,21 +15,16 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import io from 'socket.io-client'
+import { useStore } from 'vuex'
 
 import ChatsCard from '@/components/chats/ChatsCard.vue'
 
 export default defineComponent({
   setup() {
-    const socket = io('http://localhost:3000')
-
-    socket.on('connect', () => {
-      console.log('Connected')
-    })
-
-    socket.on('receive', (text) => {
-      console.log(text)
-    })
+    const store = useStore()
+    store.dispatch('socket/setAndSubscribeSocket')
+    return {
+    }
   },
   components: {
     ChatsCard

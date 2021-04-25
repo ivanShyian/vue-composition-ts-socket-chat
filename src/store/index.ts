@@ -1,12 +1,8 @@
 import { createStore } from 'vuex'
+import socket from './modules/socket.module'
 
 export default createStore({
-  state: {
-  },
-  mutations: {
-  },
-  actions: {
-  },
   modules: {
+    socket
   }
 })

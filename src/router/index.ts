@@ -13,12 +13,12 @@ const routes: Array<RouteRecordRaw> = [
       {
         path: '',
         name: 'ChatEmpty',
-        component: () => import('../views/chats/ChatEmpty.vue')
+        component: () => import('../views/chats/ChatsEmpty.vue')
       },
       {
         path: '/chats/:userID',
         name: 'ChatBox',
-        component: () => import('../views/chats/ChatBox.vue'),
+        component: () => import('../views/chats/ChatsBox.vue'),
         meta: {
           auth: true
         }
