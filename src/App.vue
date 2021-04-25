@@ -1,30 +1,39 @@
 <template>
-  <div id="nav">
-    <router-link to="/">Home</router-link> |
-    <router-link to="/about">About</router-link>
+  <div class="bg-green-300 text-emerald-900 dark:text-blue-100 dark:bg-gray-700 color overflow-y-hidden">
+    <component :is="activeLayout + '-layout'"></component>
   </div>
-  <router-view/>
 </template>
 
-<style lang="scss">
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
+<script lang="ts">
+import { defineComponent, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import LoginLayout from './layouts/LoginLayout.vue'
+import MainLayout from './layouts/MainLayout.vue'
+export default defineComponent({
+  setup() {
+    const _route = useRoute()
 
-#nav {
-  padding: 30px;
+    onMounted(() => {
+      setHTMLClass()
+    })
 
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
+    // TODO temporary adding fixed class
+    function setHTMLClass():void {
+      document.querySelector('html')!.classList.add('dark')
     }
+
+    // TODO temporary returning statement
+    const activeLayout = computed((): string => {
+      return _route.meta.auth ? 'main' : 'login'
+    })
+
+    return {
+      activeLayout
+    }
+  },
+  components: {
+    LoginLayout,
+    MainLayout
   }
-}
-</style>
+})
+</script>
