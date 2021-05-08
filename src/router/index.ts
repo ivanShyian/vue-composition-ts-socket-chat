@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import store from '@/store/index'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -34,18 +35,31 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/register',
-    name: 'Register',
-    component: () => import('../views/Register.vue'),
+    path: '/registration',
+    name: 'Registration',
+    component: () => import('../views/Registration.vue'),
     meta: {
       auth: false
     }
   }
 ]
-
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes
+})
+
+router.beforeEach((to, from, next) => {
+  const authed = to.meta.auth && store.getters['auth/isAuth']
+
+  if (to.meta.auth) {
+    if (authed) {
+      return next()
+    }
+    if (!authed) {
+      return router.push('/login')
+    }
+  }
+  next()
 })
 
 export default router

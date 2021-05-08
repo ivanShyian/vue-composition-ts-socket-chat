@@ -1,13 +1,9 @@
-import { io, Socket } from 'socket.io-client'
-import { DefaultEventsMap } from 'socket.io-client/build/typed-events'
+import { io } from 'socket.io-client'
 import { Module } from 'vuex'
 import { NewMessageObjectInterface } from '@/views/chats/ChatsInterfaces'
+import { StateSocket } from '@/modules/StoreModule'
 
-type State = {
-  socket: Socket<DefaultEventsMap>
-}
-
-const module: Module<State, State> = {
+const module: Module<StateSocket, StateSocket> = {
   namespaced: true,
   state() {
     return {
@@ -15,8 +11,8 @@ const module: Module<State, State> = {
     }
   },
   mutations: {
-    connectToSocket(state) {
-      state.socket = io('http://localhost:3000')
+    connectToSocket(state, url) {
+      state.socket = io(url)
     },
     subscribeSocketEvents(state) {
       state.socket.on('connect', () => {
@@ -28,17 +24,19 @@ const module: Module<State, State> = {
     }
   },
   actions: {
-    setAndSubscribeSocket({ commit }): void {
+    setAndSubscribeSocket({ commit }, payload): void {
       try {
-        commit('connectToSocket')
+        commit('connectToSocket', payload)
         commit('subscribeSocketEvents')
       } catch (e) {
         console.warn(e)
       }
     },
     sendMessageSocket({ state }, message: NewMessageObjectInterface): void {
-      console.log({ message })
       state.socket.emit('sendMessage', message)
+    },
+    authToSocket({ state }, username) {
+      state.socket.auth = username
     }
   }
 }

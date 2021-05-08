@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-green-300 text-emerald-900 dark:text-blue-100 dark:bg-gray-700 color overflow-y-hidden">
+  <div class="bg-green-300 text-emerald-900 dark:text-blue-100 dark:bg-gray-700 color overflow-y-hidden h-screen">
     <component :is="activeLayout + '-layout'"></component>
   </div>
 </template>

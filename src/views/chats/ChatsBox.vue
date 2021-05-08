@@ -1,5 +1,5 @@
 <template>
-  <div class="hidden md:flex mb-2 flex-auto border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-transparent overflow-hidden">
+  <div class="hidden md:flex flex-auto border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-transparent overflow-hidden h-full">
     <div class="flex md:flex-col md:justify-between flex-auto h-full">
       <div class="border-b border-gray-700 px-4 py-3 bg-gray-800 flex justify-between">
         <span>Ivan Shyian</span>
