@@ -8,5 +8,8 @@ export type StateSocket = {
 
 export type StateAuth = {
   user: UserInterface | null,
-  isAuth: boolean
+  token: {
+    expiredIn: string,
+    token: string
+  } | Record<string, never>
 }

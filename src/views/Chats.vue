@@ -10,7 +10,7 @@
         :card="card"
       ></chats-card>
     </div>
-    <div class="container mx-auto border-l border-white border-opacity-20 h-full pb-2">
+    <div class="container mx-auto border-white border-opacity-20 h-full pb-2">
       <router-view/>
     </div>
   </div>

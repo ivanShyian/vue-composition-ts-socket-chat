@@ -56,7 +56,7 @@ router.beforeEach((to, from, next) => {
       return next()
     }
     if (!authed) {
-      return router.push('/login')
+      return next('/login')
     }
   }
   next()

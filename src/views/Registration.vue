@@ -43,14 +43,18 @@
       </div>
     </div>
     <div class="w-full flex flex-col text-center">
-      <button class="border-2 outline-none rounded-xl py-2 px-4 mb-2.5 font-bold focus:outline-none hover:bg-gray-600 transform">Register</button>
+      <button
+        class="border-2 outline-none rounded-xl py-2 px-4 mb-2.5 font-bold focus:outline-none hover:bg-gray-600 transform"
+      >Register</button>
     </div>
   </form>
 </template>
 
-<script>
+<script lang="ts">
 export default {
-
+  setup() {
+    return {}
+  }
 }
 </script>
 
