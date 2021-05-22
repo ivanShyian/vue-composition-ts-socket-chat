@@ -35,7 +35,7 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/registration',
+    path: '/register',
     name: 'Registration',
     component: () => import('../views/Registration.vue'),
     meta: {
@@ -49,15 +49,10 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const authed = to.meta.auth && store.getters['auth/isAuth']
-
-  if (to.meta.auth) {
-    if (authed) {
-      return next()
-    }
-    if (!authed) {
-      return next('/login')
-    }
+  const authed = store.getters['auth/isAuth']
+  const authRequired = to.meta.auth
+  if (authRequired && !authed) {
+    return next('/login')
   }
   next()
 })

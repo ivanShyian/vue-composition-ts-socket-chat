@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client'
 import { Module } from 'vuex'
 import { NewMessageObjectInterface } from '@/views/chats/ChatsInterfaces'
-import { StateSocket } from '@/modules/StoreModule'
+import { StateSocket } from '@/modules/store/StoreModule'
 
 const module: Module<StateSocket, StateSocket> = {
   namespaced: true,

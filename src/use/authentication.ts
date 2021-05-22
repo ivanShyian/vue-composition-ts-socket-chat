@@ -1,12 +1,33 @@
 import { useField, useForm } from 'vee-validate'
 import * as yup from 'yup'
-import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
+import { Store, useStore } from 'vuex'
+import { Router, useRouter } from 'vue-router'
+import { Ref, ComputedRef, computed } from 'vue'
 
-export function useAuth(): any {
-  const store = useStore()
-  const router = useRouter()
-  const { isSubmitting, handleSubmit } = useForm()
+type VuexStore = Store<unknown>
+type SubmitHandler = (e?: (Event | undefined)) => Promise<void>
+
+interface AuthHook {
+  email: Ref<string | undefined>,
+  password: Ref<string | undefined>,
+  nickname?: Ref<string | undefined>,
+  emailError: ComputedRef<string | undefined>,
+  passwordError: ComputedRef<string | undefined>,
+  nicknameError: ComputedRef<string | undefined>,
+  isSubmitting: Ref<boolean>,
+  emailBlur: (e?: Event) => void,
+  passwordBlur: (e?: Event) => void,
+  nicknameBlur: (e?: Event) => void,
+  authTo: SubmitHandler,
+  registerTo: SubmitHandler
+}
+
+export function useAuth(isRegister?: boolean): AuthHook {
+  const store: VuexStore = useStore()
+  const router: Router = useRouter()
+  const authStatus = computed(() => store.getters['auth/authStatus'])
+
+  const { isSubmitting, handleSubmit, resetForm } = useForm()
   const { errorMessage: emailError, value: email, handleBlur: emailBlur } = useField(
     'email',
     yup.string().required('Email is required').email('Wrong email')
@@ -16,26 +37,45 @@ export function useAuth(): any {
     yup.string().required('Password is required').min(6).matches(/[a-zA-Z0-9]/, 'Password can only contain Latin letters.')
   )
 
-  const authTo = async(): Promise<void> => {
-    try {
-      await store.dispatch('auth/login', {
-        email: email.value,
-        password: password.value
-      })
-      await router.push('/chats')
-    } catch (e) {
-      console.warn(e)
-    }
-  }
+  const { errorMessage: nicknameError, value: nickname, handleBlur: nicknameBlur } = useField(
+    'nickname',
+    isRegister
+      ? yup.string().required('Nickname is required').min(2).matches(/[a-zA-Z0-9]/, 'Nickname can only contain Latin letters.')
+      : yup.string().trim()
+  )
+
+  const authTo = handleSubmit(async(): Promise<void> => {
+    await store.dispatch('auth/login', {
+      email: email.value,
+      password: password.value
+    })
+    authStatus.value?.success && await router.push('/chats')
+    resetForm()
+  })
+
+  const registerTo = handleSubmit(async(): Promise<void> => {
+    await store.dispatch('auth/register', {
+      email: email.value,
+      password: password.value,
+      nickname: nickname.value
+    })
+    console.log(authStatus.value.success)
+    authStatus.value?.success && await router.push('/chats')
+    resetForm()
+  })
+
   return {
     email,
     password,
+    nickname,
     emailError,
     passwordError,
     emailBlur,
     passwordBlur,
     isSubmitting,
-    handleSubmit,
-    authTo
+    nicknameError,
+    nicknameBlur,
+    authTo,
+    registerTo
   }
 }
