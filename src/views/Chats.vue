@@ -2,22 +2,32 @@
   <div class="chats pt-14 md:pt-20 flex justify-between h-screen">
     <div
       id="card-container"
-      class="chats-card overflow-y-auto direction pb-20 md:pb-2"
+      class="chats-card overflow-y-auto direction pb-20 md:pb-2 w-1/5"
     >
-      <chats-card
-        v-for="(card, i) in 5"
-        :key="i"
-        :card="card"
-      ></chats-card>
+      <div v-if="chats.length">
+        <chats-card
+          v-for="(chat, i) in chats"
+          :key="i"
+          :card="chat"
+        ></chats-card>
+      </div>
+      <div v-else
+           class="text-center text-lg font-bold mt-6 overflow-hidden">
+        <span>You haven't chats yet...</span>
+      </div>
     </div>
-    <div class="container mx-auto border-white border-opacity-20 h-full pb-2">
+    <div class="container mx-auto w-5/6 border-white border-opacity-20 h-full pb-2">
       <router-view/>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref, onMounted } from 'vue'
+import {
+  defineComponent,
+  computed,
+  ComputedRef
+} from 'vue'
 import { useStore } from 'vuex'
 
 import ChatsCard from '@/components/chats/ChatsCard.vue'
@@ -26,24 +36,10 @@ import { UserInterface } from '@/modules/chats/ChatsModule'
 export default defineComponent({
   setup() {
     const store = useStore()
-    const URL = 'http://localhost:3000'
-    const user: Ref<UserInterface | Record<string, never>> = ref({})
-    // const userChats = computed(() => store.getters['auth/userInfo'])
-
-    onMounted((): void => {
-      // user.value = computed(() => store.getters['auth/userInfo'])
-      connectToChat()
-    })
-
-    const connectToChat = async(): Promise<void> => {
-      const auth = store.getters['auth/isAuth']
-
-      if (auth && user.value?.nickname) {
-        await store.dispatch('socket/authToSocket', 'vanjkes') // user.value.nickname
-        await store.dispatch('socket/setAndSubscribeSocket', URL)
-      }
+    const chats = computed(() => store.getters['socket/chatUsers'])
+    return {
+      chats
     }
-    return {}
   },
   components: {
     ChatsCard

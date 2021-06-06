@@ -52,7 +52,8 @@ router.beforeEach((to, from, next) => {
   const authed = store.getters['auth/isAuth']
   const authRequired = to.meta.auth
   if (authRequired && !authed) {
-    return next('/login')
+    store.dispatch('auth/logoutAndGoToLoginPage')
+    return next()
   }
   next()
 })

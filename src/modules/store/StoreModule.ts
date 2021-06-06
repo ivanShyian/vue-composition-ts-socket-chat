@@ -4,7 +4,10 @@ import { UserInterface } from '@/modules/chats/ChatsModule'
 import { StatusType } from '@/modules/store/AuthTypes'
 
 export type StateSocket = {
-  socket: Socket<DefaultEventsMap>
+  socket: Socket<DefaultEventsMap> | {
+    [key: string]: () => void
+  } | Record<string, never>,
+  users: Array<{ [key:string]: string }>
 }
 
 export type StateAuth = {

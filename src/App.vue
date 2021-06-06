@@ -5,12 +5,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onMounted } from 'vue'
+import { defineComponent, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import LoginLayout from './layouts/LoginLayout.vue'
 import MainLayout from './layouts/MainLayout.vue'
+import { useStore } from 'vuex'
 export default defineComponent({
   setup() {
+    const _store = useStore()
     const _route = useRoute()
 
     onMounted(() => {
@@ -21,12 +23,14 @@ export default defineComponent({
     function setHTMLClass():void {
       document.querySelector('html')!.classList.add('dark')
     }
-
     // TODO temporary returning statement
     const activeLayout = computed((): string => {
       return _route.meta.auth ? 'main' : 'login'
     })
 
+    onUnmounted(() => {
+      _store.commit('socket/destroySocketConnection')
+    })
     return {
       activeLayout
     }
