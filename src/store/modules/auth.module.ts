@@ -5,8 +5,9 @@ import { UserInterface } from '@/modules/chats/ChatsModule'
 import router from '@/router/index'
 import Firebase from '@/utils/Firebase'
 
-const JWT_TOKEN = 'token'
 const firebase = new Firebase()
+
+const JWT_TOKEN = 'token'
 
 const module: Module<StateAuth, StateAuth> = {
   namespaced: true,
@@ -45,7 +46,6 @@ const module: Module<StateAuth, StateAuth> = {
           email: payload.email,
           password: payload.password
         })
-        console.log({ data })
         if (!(data?.user && data?.token)) {
           return
         }
@@ -82,26 +82,36 @@ const module: Module<StateAuth, StateAuth> = {
         })
       }
     },
-    async logoutAndGoToLoginPage({ commit }) {
+    logoutAndGoToLoginPage({ commit }) {
       commit('logout')
-      await router.push('/login')
+      router.push('/login')
     },
-    async getUserData({ commit, dispatch }, token) {
+    async getUserData({ commit, dispatch }) {
       try {
-        // const { data } = await axiosBase.post('/user/get', token)
-        // console.log({ data })
-        // commit('setUserData', data)
-        const res = await firebase.getUser()
-        if (!res) {
+        // @@TODO Temporary
+        const res: any = await firebase.observable()
+        if (res && res.token) {
+          const { token, ...data } = res
+          commit('setUserData', data)
+          commit('setToken', token)
+        }
+        commit('authStatusHandler', {
+          error: false,
+          success: true
+        })
+      } catch (e) {
+        if (!e) {
           return dispatch('logoutAndGoToLoginPage')
         }
-      } catch (e) {
         console.error(e.response?.data?.error?.message || e)
         commit('authStatusHandler', {
           error: true,
           success: false
         })
       }
+    },
+    setCurrentUser(context, user) {
+      console.log(user)
     }
   },
   getters: {

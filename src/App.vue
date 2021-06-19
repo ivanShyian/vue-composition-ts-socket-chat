@@ -20,7 +20,7 @@ export default defineComponent({
     })
 
     // TODO temporary adding fixed class
-    function setHTMLClass():void {
+    function setHTMLClass(): void {
       document.querySelector('html')!.classList.add('dark')
     }
     // TODO temporary returning statement

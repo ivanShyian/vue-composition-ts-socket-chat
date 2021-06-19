@@ -52,7 +52,7 @@ const module: Module<StateSocket, StateSocket> = {
         // handleError
         state.socket.on('connect_error', (err) => {
           if (err.message === 'invalid username') {
-            dispatch('logoutAndGoToLoginPage')
+            // dispatch('auth/logoutAndGoToLoginPage', {}, { root: true })
           }
         })
       } catch (e) {

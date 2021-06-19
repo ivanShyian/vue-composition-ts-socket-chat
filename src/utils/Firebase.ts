@@ -12,12 +12,25 @@ interface Credentials {
 }
 
 export default class Firebase {
-  async observable(): Promise<any> {
-    await firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        console.log({ user })
-      }
+  async observable(): Promise<{
+    nickname: string,
+    email: string
+    token: string
+  } | Record<never, string> | Promise<never>> {
+    let userData = {}
+    await new Promise((resolve, reject) => {
+      firebase.auth().onAuthStateChanged(async(user) => {
+        if (user) {
+          const token = await user.getIdToken()
+          const databaseUser = await this.getUserFromDatabase(user.uid)
+          resolve(userData = { token, ...databaseUser })
+        }
+        if (!user) {
+          reject(console.warn('User doesn\'t defined'))
+        }
+      })
     })
+    return userData
   }
 
   async login({ email, password }: Credentials): Promise<undefined | {
@@ -67,7 +80,7 @@ export default class Firebase {
     }
   }
 
-  async getUser() {
+  async getUser(): Promise<firebase.User | null> {
     return firebase.auth().currentUser
   }
 

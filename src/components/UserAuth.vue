@@ -2,13 +2,9 @@
 import { onMounted, defineComponent, h, ComputedRef, computed } from 'vue'
 import { useStore } from 'vuex'
 import { UserInterface } from '@/modules/chats/ChatsModule'
-import Firebase from '@/utils/Firebase'
 
 export default defineComponent({
   setup() {
-    const firebase = new Firebase()
-    firebase.observable()
-
     const store = useStore()
     const user: ComputedRef<UserInterface | null> = computed(() => store.getters['auth/userData'])
 
