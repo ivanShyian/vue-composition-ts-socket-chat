@@ -1,8 +1,9 @@
 import { io } from 'socket.io-client'
 import { Module } from 'vuex'
-import { NewMessageObjectInterface } from '@/views/chats/ChatsInterfaces'
+import { NewMessageObjectInterface } from '@/modules/chats/ChatsInterfaces'
 import { StateSocket } from '@/modules/store/StoreModule'
 import { handleUsers } from '@/utils/socketUserHelper'
+import { newMessageHelper } from '@/utils/socketNewMessageHelper'
 
 const module: Module<StateSocket, StateSocket> = {
   namespaced: true,
@@ -21,17 +22,26 @@ const module: Module<StateSocket, StateSocket> = {
     },
     subscribeSocketEvents(state) {
       state.socket.on('connect', () => {
-        console.log('Connected')
+        // state.users.forEach((user) => {
+        //   console.log(user)
+        // })
       })
-      state.socket.on('receive', (message) => {
-        console.log(message)
+
+      state.socket.on('session', ({ sessionID, userID }) => {
+        state.socket.auth = { sessionID }
+        localStorage.setItem('sessionID', sessionID)
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        state.socket.userId = userID
       })
+
       state.socket.on('users', (users) => {
         state.users = handleUsers(users, state.socket.id)
       })
 
       state.socket.on('user connected', (user) => {
-        state.users.push(user)
+        state.users.push({ ['user_' + user.uid]: user })
+        console.log(state.users)
       })
 
       // toHandleEveryEvent
@@ -44,17 +54,32 @@ const module: Module<StateSocket, StateSocket> = {
     }
   },
   actions: {
-    setAndSubscribeSocket({ state, commit, dispatch }): void {
+    setAndSubscribeSocket({ state, commit, dispatch, rootGetters }): void {
       try {
         commit('subscribeSocketEvents')
-        commit('connectToSocket')
 
         // handleError
         state.socket.on('connect_error', (err) => {
+          console.log(err)
           if (err.message === 'invalid username') {
-            // dispatch('auth/logoutAndGoToLoginPage', {}, { root: true })
+            // dispatch('auth/logoutAndGoToLoginPage', '', { root: true })
           }
         })
+
+        state.socket.on('new-message', ({ content, from }) => {
+          for (let i = 0; i < state.users.length; i++) {
+            const user = state.users[i]
+            newMessageHelper({
+              user,
+              socketID: state.socket.id,
+              content,
+              from,
+              selectedChatId: rootGetters['chats/selectedChat']
+            })
+          }
+        })
+
+        commit('connectToSocket')
       } catch (e) {
         console.warn(e)
       }
@@ -62,8 +87,12 @@ const module: Module<StateSocket, StateSocket> = {
     sendMessageSocket({ state }, message: NewMessageObjectInterface): void {
       state.socket.emit('sendMessage', message)
     },
-    authToSocket({ state }, username) {
-      state.socket.auth = { username }
+    authToSocket({ state }, data) {
+      if (!data.sessionID.length) {
+        state.socket.auth = { username: data.nickname }
+        return
+      }
+      state.socket.auth = { sessionID: data.sessionID, username: data.nickname }
     }
   },
   getters: {

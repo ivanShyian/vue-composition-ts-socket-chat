@@ -14,8 +14,8 @@
           :key="i"
         >
           <p class="bg-gray-700 dark:bg-gray-200 border py-1 px-4 rounded-lg">
-            <span class="font-medium text-md mr-4">{{ m.message }}</span>
-            <span class="font-light text-xs">{{ m.time }}</span>
+            <span class="font-medium text-md mr-4">{{ m.content && m.content.message }}</span>
+            <span class="font-light text-xs">{{ m.content && m.content.time }}</span>
           </p>
         </div>
       </div>
@@ -48,15 +48,26 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, Ref } from 'vue'
+import { computed, defineComponent, ref, Ref, watch } from 'vue'
 import { useStore } from 'vuex'
-import { NewMessageObjectInterface } from './ChatsInterfaces'
+import { NewMessageObjectInterface } from '@/modules/chats/ChatsInterfaces'
+import { useRoute } from 'vue-router'
 
 export default defineComponent({
   setup() {
     const store = useStore()
+    const route = useRoute()
     const messages: Ref<NewMessageObjectInterface[]> = ref([])
     const messageText: Ref<string> = ref('')
+    const selectedUserSocketID = computed(() => route.params && route.params.userID)
+
+    watch(selectedUserSocketID, (
+      newValue, oldValue) => store.commit('chats/setSelectedUserSocketID', newValue), {
+      immediate: true
+    })
+
+    // const getMessages = computed(() => store.getters[''])
+    const chats = computed(() => store.getters['socket/chatUsers'])
 
     const sendMessage = (): void => {
       if (!messageText.value.length) {
@@ -65,12 +76,15 @@ export default defineComponent({
 
       // TODO Temporary. Need to parse time depends of local
       const newMessage: NewMessageObjectInterface = {
-        uid: '213kqoeq',
-        time: new Date().getTime(),
-        message: messageText.value
+        content: {
+          uid: selectedUserSocketID.value,
+          time: new Date().getTime(),
+          message: messageText.value
+        },
+        to: selectedUserSocketID.value
       }
 
-      messages.value.push(newMessage)
+      messages.value.push({ ...newMessage, fromSelf: true })
       store.dispatch('socket/sendMessageSocket', newMessage)
       messageText.value = ''
     }

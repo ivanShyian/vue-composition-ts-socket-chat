@@ -4,5 +4,5 @@ export interface UserInterface {
   email: string,
   status?: string,
   lastOnline?: number,
-  chats?: []
+  chats?: any[]
 }

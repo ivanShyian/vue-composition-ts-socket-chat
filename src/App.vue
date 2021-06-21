@@ -9,11 +9,9 @@ import { defineComponent, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import LoginLayout from './layouts/LoginLayout.vue'
 import MainLayout from './layouts/MainLayout.vue'
-import { useStore } from 'vuex'
 export default defineComponent({
   setup() {
-    const _store = useStore()
-    const _route = useRoute()
+    const route = useRoute()
 
     onMounted(() => {
       setHTMLClass()
@@ -25,11 +23,7 @@ export default defineComponent({
     }
     // TODO temporary returning statement
     const activeLayout = computed((): string => {
-      return _route.meta.auth ? 'main' : 'login'
-    })
-
-    onUnmounted(() => {
-      _store.commit('socket/destroySocketConnection')
+      return route.meta.auth ? 'main' : 'login'
     })
     return {
       activeLayout
