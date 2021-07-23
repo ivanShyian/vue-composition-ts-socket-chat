@@ -4,11 +4,12 @@
       id="card-container"
       class="chats-card overflow-y-auto direction pb-20 md:pb-2 w-1/5"
     >
-      <div v-if="chats.length">
+      <div v-if="hasChats">
         <chats-card
-          v-for="(chat, i) in chats"
-          :key="i"
+          v-for="(chat, chatName, key) in chats"
+          :key="key"
           :card="chat"
+          :name="chatName"
           @click.prevent="choiceChat(chat)"
         ></chats-card>
       </div>
@@ -28,8 +29,8 @@ import {
   defineComponent,
   computed
 } from 'vue'
-import { useStore } from 'vuex'
-import { useRoute, useRouter } from 'vue-router'
+import {useStore} from 'vuex'
+import {useRoute, useRouter} from 'vue-router'
 import ChatsCard from '@/components/chats/ChatsCard.vue'
 
 export default defineComponent({
@@ -37,19 +38,27 @@ export default defineComponent({
     const store = useStore()
     const router = useRouter()
     const route = useRoute()
-    const chats = computed(() => store.getters['socket/chatUsers'])
 
-    const choiceChat = (chat: any) => {
-      if (route.params.userID) {
-        return router.replace('/chats/')
+    const chats = computed(() => store.getters['chats/allChats'])
+    const hasChats = computed(() => Object.keys(chats.value).length)
+
+    const choiceChat = (chat: any): void => {
+      const currentChatNickname = route.params.userID
+      const pickedUsername = chat.username
+
+      if (currentChatNickname) {
+        if (currentChatNickname === pickedUsername) {
+          router.push('/chats/')
+          return
+        }
+        router.push(`/chats/${pickedUsername}`)
+        return
       }
-
-      Object.keys(chat).map(e => {
-        router.push(`/chats/${chat[e].userID}`)
-      })
+      router.push(`/chats/${pickedUsername}`)
     }
     return {
       chats,
+      hasChats,
       choiceChat
     }
   },

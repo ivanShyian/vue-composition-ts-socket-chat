@@ -1,9 +1,17 @@
-import { StateAuth } from '@/modules/store/StoreModule'
-import { Module } from 'vuex'
-import { StatusType } from '@/modules/store/AuthTypes'
-import { UserInterface } from '@/modules/chats/ChatsModule'
+import {Module} from 'vuex'
+import {StatusType} from '@/modules/store/AuthTypes'
+import {UserInterface} from '@/modules/chats/ChatsModule'
 import router from '@/router/index'
 import Firebase from '@/utils/Firebase'
+
+interface StateAuth {
+  user: UserInterface | null,
+  token: {
+    expiredIn: string,
+    token: string
+  } | Record<string, never>,
+  status: StatusType
+}
 
 const firebase = new Firebase()
 
@@ -26,7 +34,8 @@ const module: Module<StateAuth, StateAuth> = {
       }
     },
     setUserData(state, user) {
-      state.user = user
+      const {nickname, other} = user
+      state.user = {...other, username: nickname}
     },
     authStatusHandler(state, payload) {
       state.status = payload
@@ -40,7 +49,7 @@ const module: Module<StateAuth, StateAuth> = {
     }
   },
   actions: {
-    async login({ commit }, payload): Promise<void> {
+    async login({commit}, payload): Promise<void> {
       try {
         const data = await firebase.login({
           email: payload.email,
@@ -63,12 +72,13 @@ const module: Module<StateAuth, StateAuth> = {
         })
       }
     },
-    async register({ dispatch, commit }, payload): Promise<void> {
+    async register({dispatch, commit}, payload): Promise<void> {
       try {
         await firebase.register({
           email: payload.email,
           password: payload.password,
-          nickname: payload.nickname
+          nickname: payload.nickname,
+          id: payload.id
         })
         await dispatch('login', {
           email: payload.email,
@@ -82,22 +92,24 @@ const module: Module<StateAuth, StateAuth> = {
         })
       }
     },
-    logoutAndGoToLoginPage({ commit }) {
-      commit('logout')
-      router.push('/login')
-    },
-    async getUserData({ commit, dispatch }) {
+    async getUserData({commit, dispatch}): Promise<UserInterface | undefined> {
       try {
         // @@TODO Temporary
         const res: any = await firebase.observable()
         if (res && res.token) {
-          const { token, ...data } = res
+          const {token, lastMessages, ...data} = res
           commit('setUserData', data)
           commit('setToken', token)
+          dispatch('chats/addLastMessages', lastMessages, {root: true})
+          commit('authStatusHandler', {
+            error: false,
+            success: true
+          })
+          return data
         }
         commit('authStatusHandler', {
           error: false,
-          success: true
+          success: false
         })
       } catch (e) {
         if (!e) {
@@ -110,8 +122,9 @@ const module: Module<StateAuth, StateAuth> = {
         })
       }
     },
-    setCurrentUser(context, user) {
-      console.log(user)
+    logoutAndGoToLoginPage({commit}) {
+      commit('logout')
+      router.push('/login')
     }
   },
   getters: {

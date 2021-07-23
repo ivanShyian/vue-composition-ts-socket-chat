@@ -1,8 +1,9 @@
-import { useField, useForm } from 'vee-validate'
+import {useField, useForm} from 'vee-validate'
 import * as yup from 'yup'
-import { Store, useStore } from 'vuex'
-import { Router, useRouter } from 'vue-router'
-import { Ref, ComputedRef, computed } from 'vue'
+import {Store, useStore} from 'vuex'
+import {Router, useRouter} from 'vue-router'
+import {Ref, ComputedRef, computed} from 'vue'
+import {randomId} from '@/utils/randomIdGenerator'
 
 type VuexStore = Store<unknown>
 type SubmitHandler = (e?: (Event | undefined)) => Promise<void>
@@ -27,17 +28,17 @@ export function useAuth(isRegister?: boolean): AuthHook {
   const router: Router = useRouter()
   const authStatus = computed(() => store.getters['auth/authStatus'])
 
-  const { isSubmitting, handleSubmit, resetForm } = useForm()
-  const { errorMessage: emailError, value: email, handleBlur: emailBlur } = useField(
+  const {isSubmitting, handleSubmit, resetForm} = useForm()
+  const {errorMessage: emailError, value: email, handleBlur: emailBlur} = useField(
     'email',
     yup.string().required('Email is required').email('Wrong email')
   )
-  const { errorMessage: passwordError, value: password, handleBlur: passwordBlur } = useField(
+  const {errorMessage: passwordError, value: password, handleBlur: passwordBlur} = useField(
     'password',
     yup.string().required('Password is required').min(6).matches(/[a-zA-Z0-9]/, 'Password can only contain Latin letters.')
   )
 
-  const { errorMessage: nicknameError, value: nickname, handleBlur: nicknameBlur } = useField(
+  const {errorMessage: nicknameError, value: nickname, handleBlur: nicknameBlur} = useField(
     'nickname',
     isRegister
       ? yup.string().required('Nickname is required').min(2).matches(/[a-zA-Z0-9]/, 'Nickname can only contain Latin letters.')
@@ -57,9 +58,9 @@ export function useAuth(isRegister?: boolean): AuthHook {
     await store.dispatch('auth/register', {
       email: email.value,
       password: password.value,
-      nickname: nickname.value
+      nickname: nickname.value,
+      id: randomId()
     })
-    console.log(authStatus.value.success)
     authStatus.value?.success && await router.push('/chats')
     resetForm()
   })

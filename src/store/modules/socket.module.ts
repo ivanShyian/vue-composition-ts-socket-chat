@@ -1,19 +1,16 @@
-import { io } from 'socket.io-client'
-import { Module } from 'vuex'
-import { NewMessageObjectInterface } from '@/modules/chats/ChatsInterfaces'
-import { StateSocket } from '@/modules/store/StoreModule'
-import { handleUsers } from '@/utils/socketUserHelper'
-import { newMessageHelper } from '@/utils/socketNewMessageHelper'
+import {io} from 'socket.io-client'
+import {Module} from 'vuex'
+import {NewMessageObjectInterface} from '@/modules/chats/ChatsInterfaces'
+import {StateSocket} from '@/modules/store/StoreModule'
 
 const module: Module<StateSocket, StateSocket> = {
   namespaced: true,
   state() {
     return {
-      socket: io('http://localhost:3000', {
+      socket: io('http://localhost:3001', {
         autoConnect: false,
         path: '/socket-service/'
-      }),
-      users: []
+      })
     }
   },
   mutations: {
@@ -26,23 +23,27 @@ const module: Module<StateSocket, StateSocket> = {
         //   console.log(user)
         // })
       })
+      state.socket.on('disconnect', () => {
+        // this.users.forEach((user) => {
+        //   if (user.self) {
+        //     user.connected = false;
+        //   }
+      })
 
-      state.socket.on('session', ({ sessionID, userID }) => {
-        state.socket.auth = { sessionID }
-        localStorage.setItem('sessionID', sessionID)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
+      state.socket.on('session', ({sessionID, userID}) => {
+        state.socket.auth = {sessionID}
+        localStorage.setItem('socketSessionID', sessionID)
         state.socket.userId = userID
       })
 
-      state.socket.on('users', (users) => {
-        state.users = handleUsers(users, state.socket.id)
-      })
-
-      state.socket.on('user connected', (user) => {
-        state.users.push({ ['user_' + user.uid]: user })
-        console.log(state.users)
-      })
+      // state.socket.on('user disconnected', (user) => {
+      //   state.users = state.users.filter(u => {
+      //     if ('user_undefined' in u) {
+      //       return
+      //     }
+      //     return u
+      //   })
+      // })
 
       // toHandleEveryEvent
       state.socket.onAny((event, ...args) => {
@@ -54,9 +55,33 @@ const module: Module<StateSocket, StateSocket> = {
     }
   },
   actions: {
-    setAndSubscribeSocket({ state, commit, dispatch, rootGetters }): void {
+    setAndSubscribeSocket({state, commit, dispatch}): void {
       try {
         commit('subscribeSocketEvents')
+
+        // upd-
+        state.socket.on('users', (users) => {
+          dispatch('chats/loadChatsFromSocket', {
+            users,
+            userId: state.socket.userId
+          }, {root: true})
+        })
+
+        state.socket.on('user connected', (user) => {
+          dispatch('chats/addChat', {
+            user
+          }, {root: true})
+        })
+
+        state.socket.on('new-message', ({content, from, to}) => {
+          dispatch('chats/addNewMessage', {
+            content,
+            from,
+            socketId: state.socket.id,
+            to
+          }, {root: true})
+        })
+        // -upd
 
         // handleError
         state.socket.on('connect_error', (err) => {
@@ -65,38 +90,31 @@ const module: Module<StateSocket, StateSocket> = {
             // dispatch('auth/logoutAndGoToLoginPage', '', { root: true })
           }
         })
-
-        state.socket.on('new-message', ({ content, from }) => {
-          for (let i = 0; i < state.users.length; i++) {
-            const user = state.users[i]
-            newMessageHelper({
-              user,
-              socketID: state.socket.id,
-              content,
-              from,
-              selectedChatId: rootGetters['chats/selectedChat']
-            })
-          }
-        })
-
         commit('connectToSocket')
       } catch (e) {
         console.warn(e)
       }
     },
-    sendMessageSocket({ state }, message: NewMessageObjectInterface): void {
+    sendMessageSocket({state}, message: NewMessageObjectInterface): void {
       state.socket.emit('sendMessage', message)
     },
-    authToSocket({ state }, data) {
-      if (!data.sessionID.length) {
-        state.socket.auth = { username: data.nickname }
+    authToSocket({state}, data) {
+      if (!data.sessionID) {
+        state.socket.auth = {
+          username: data.nickname,
+          userDatabaseID: data.id
+        }
         return
       }
-      state.socket.auth = { sessionID: data.sessionID, username: data.nickname }
+      state.socket.auth = {
+        sessionID: data.sessionID,
+        username: data.nickname,
+        userDatabaseID: data.id
+      }
     }
   },
   getters: {
-    chatUsers: (state) => state.users
+    userSocketId: (state) => state.socket.userId
   }
 }
 

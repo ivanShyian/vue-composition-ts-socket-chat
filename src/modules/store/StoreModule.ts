@@ -3,26 +3,13 @@ import { DefaultEventsMap } from 'socket.io-client/build/typed-events'
 import { UserInterface } from '@/modules/chats/ChatsModule'
 import { StatusType } from '@/modules/store/AuthTypes'
 
+interface ISocket extends Socket {
+  userId?: string
+}
+
 //@TODO Change this any1
-export type StateSocket = {
-  socket: Socket<DefaultEventsMap > | {
+export interface StateSocket {
+  socket: ISocket | {
     [key: string]: () => void
-  } | Record<string, never>,
-  users: Array<{ [key:string]: any }>
-}
-
-export type StateAuth = {
-  user: UserInterface | null,
-  token: {
-    expiredIn: string,
-    token: string
-  } | Record<string, never>,
-  status: StatusType
-}
-
-//@TODO Change this any2
-export type StateChats = {
-  chats: any
-  hasNewMessage: boolean,
-  selectedChatId: string
+  } | Record<string, never>
 }

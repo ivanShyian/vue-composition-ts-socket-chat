@@ -19,7 +19,7 @@ export default defineComponent({
 
     // TODO temporary adding fixed class
     function setHTMLClass(): void {
-      document.querySelector('html')!.classList.add('dark')
+      (document.querySelector('html') as HTMLHtmlElement).classList.add('dark')
     }
     // TODO temporary returning statement
     const activeLayout = computed((): string => {

@@ -24,10 +24,15 @@ module.exports = {
       xl: '1280px',
       '2xl': '1536px'
     },
+    maxWidth: {
+      '1/2': '50%',
+      '2/5': '40%'
+    },
     container: {
       padding: '.5rem'
     },
-    extend: {}
+    extend: {
+    }
   },
   variants: {
     extend: {

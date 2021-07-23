@@ -1,8 +1,16 @@
 export interface UserInterface {
-  nickname: string,
-  imgURL?: string,
-  email: string,
-  status?: string,
-  lastOnline?: number,
+  nickname: string
+  email: string
+  id: string
+  uid: string
+  imgURL?: string
+  status?: string
+  lastOnline?: number
   chats?: any[]
+}
+
+export interface UserSocketInterface {
+  userID: string
+  username: string
+  userDatabaseID?: string
 }

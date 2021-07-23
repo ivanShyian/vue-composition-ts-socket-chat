@@ -2,7 +2,7 @@
   <div class="flex justify-center content-center h-full">
     <form>
       <div class="flex flex-col md:w-96 font-bold">
-        <div class="flex flex-col mb-1 md:mb-2">
+        <div class="flex flex-col mb-4 md:mb-6 relative">
           <label for="email" class="pl-2 pb-2">
             Email
           </label>
@@ -14,10 +14,10 @@
             v-model="email"
             @blur="emailBlur"
             class="outline-none py-1.5 px-3 rounded-xl bg-blue-100 focus:ring-2 focus:ring-yellow-600 text-blue-900">
-          <span class="py-2.5" v-if="!emailError"></span>
-          <span class="text-sm text-red-600 pl-2 pt-1" v-else>{{ emailError }}</span>
+<!--          <span class="py-2.5" v-if="!emailError"></span>-->
+          <span class="text-sm text-red-600 pl-2 pt-1 absolute -bottom-6 right-0" v-if="emailError">{{ emailError }}</span>
         </div>
-        <div class="flex flex-col mb-2 md:mb-4">
+        <div class="flex flex-col mb-8 md:mb-10 relative">
           <label for="password" class="pl-2 pb-2">
             Password
           </label>
@@ -29,8 +29,7 @@
             @blur="passwordBlur"
             placeholder="Your password..."
             class="outline-none py-1.5 px-3 rounded-xl bg-blue-100 focus:ring-2 focus:ring-yellow-600 text-blue-900">
-          <span class="py-2.5" v-if="!passwordError"></span>
-          <span class="text-sm text-red-600 pl-2 pt-1" v-else>{{ passwordError }}</span>
+          <span class="text-sm text-red-600 pl-2 pt-1 absolute -bottom-6 right-0" v-if="passwordError">{{ passwordError }}</span>
         </div>
       </div>
       <div class="w-full flex flex-col text-center">
