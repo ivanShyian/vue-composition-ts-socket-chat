@@ -27,20 +27,16 @@ const module: Module<StateChats, StateChats> = {
   mutations: {
     updateChats(state, payload) {
       const {users, userId}: {users: [], userId: string} = payload
-      // state.chats
-      const socketOnlineChats: any = handleUsers(users, userId)
-      for (const chat in socketOnlineChats) {
-        if (Object.prototype.hasOwnProperty.call(socketOnlineChats, chat) && chat in state.chats) {
-          state.chats[chat] = {...state.chats[chat], ...socketOnlineChats[chat]}
-        }
-      }
+      state.chats = handleUsers(users, userId, state.chats)
     },
     addConnectedChat(state, payload) {
       const {user}: {user: any} = payload
+      const chatName = 'user_' + user.userDatabaseID
 
-      state.chats = {
-        ...state.chats,
-        ['user_' + user.userDatabaseID]: user
+      if (chatName in state.chats) {
+        state.chats[chatName] = {...state.chats[chatName], ...user}
+      } else {
+        state.chats = {...state.chats, [chatName]: user}
       }
     },
     setLastMessages(state, chats) {
@@ -48,33 +44,26 @@ const module: Module<StateChats, StateChats> = {
         return
       }
       chats.forEach((chat: any) => {
-        const databaseID = chat.chatUser === 'self' ? 'userSelf' : chat.chatUser.id
-
+        const chatName = chat.chatUser === 'self' ? 'userSelf' : chat.chatUser.id
+        const databaseID = chat.databaseID || chat.chatUser.id
         const message = {
-          message: chat.message,
-          time: chat.timestamp,
+          message: chat.message || '',
+          time: chat.timestamp || null,
           nickname: 'some',
-          databaseID: chat.databaseID || chat.chatUser.databaseID
+          databaseID
         }
 
-        if (databaseID in state.chats) {
-          if ('messages' in state.chats[databaseID]) {
-            state.chats[databaseID].messages.push(message)
-          } else {
-            state.chats[databaseID] = {
-              ...state.chats[databaseID],
-              messages: [message]
-            }
-          }
+        if (chatName in state.chats) {
+          state.chats[chatName].lastMessage = message
           return
         }
 
         state.chats = {
           ...state.chats,
-          [databaseID]: {
-            userDatabaseID: chat.databaseID || chat.chatUser.id,
-            messages: [message],
-            username: chat.chatUser.nickname ?? null
+          [chatName]: {
+            userDatabaseID: databaseID,
+            lastMessage: message,
+            username: chat.chatUser.nickname || null
           }
         }
       })

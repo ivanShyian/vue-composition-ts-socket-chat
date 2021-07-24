@@ -14,8 +14,8 @@
         ></chats-card>
       </div>
       <div v-else
-           class="text-center text-lg font-bold mt-6 overflow-hidden">
-        <span>You haven't chats yet...</span>
+           class="text-center text-lg font-light tracking-wider mt-6 overflow-hidden">
+        <span>Loading...</span>
       </div>
     </div>
     <div class="container mx-auto w-5/6 border-white border-opacity-20 h-full pb-2">

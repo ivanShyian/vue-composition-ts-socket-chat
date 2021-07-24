@@ -40,13 +40,13 @@ export default defineComponent({
     const connectToChat = async(data: any): Promise<void> => {
       if (data.hasSocketData) {
         await store.dispatch('socket/authToSocket', {
-          nickname: user.value?.nickname,
+          nickname: data.nickname,
           sessionID: data.sessionID,
           id: data.id
         })
       } else {
         await store.dispatch('socket/authToSocket', {
-          nickname: user.value?.nickname,
+          nickname: data.nickname,
           id: data.id
         })
       }

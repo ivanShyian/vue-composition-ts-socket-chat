@@ -1,17 +1,24 @@
 <template>
   <div
-      class="shadow-sm border-b border-opacity-30 py-2.5 pl-3 w-auto flex flex-none mx-4 border-gray-800 dark:border-gray-500 bg-gray-100 dark:bg-transparent cursor-pointer dark:hover:bg-blue-50 dark:hover:bg-opacity-10 transition-all duration-300">
-    <div class="w-1/4 p-1 mr-3 md:w-1/6 flex items-center">
+      class="shadow-sm border-b border-opacity-30 py-2.5 pl-3 w-auto flex flex-none ml-2 mr-1
+      border-gray-800 dark:border-gray-500 bg-gray-100 dark:bg-transparent cursor-pointer
+      dark:hover:bg-blue-50 dark:hover:bg-opacity-10 transition-all duration-300">
+    <div class="w-1/4 mr-3 md:w-1/6 flex items-center">
       <img
         class="border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-full w-full flex justify-center items-center"
         src="@/assets/logo.png"/>
     </div>
     <div class="w-3/4 flex flex-col">
       <div class="mb-1 flex justify-between">
-        <span>{{ userName }}</span>
-        <span>{{lastMessageTime}}</span>
+        <span>{{ userName}}</span>
+        <span class="text-sm">{{ lastMessageTime }}</span>
       </div>
-      <p>{{lastMessageContent}}</p>
+      <p class="whitespace-nowrap overflow-hidden overflow-ellipsis text-sm text-blue-200 text-opacity-20"
+         v-if="lastMessageContent === ''"
+      >There is no messages yet</p>
+      <p class="whitespace-nowrap overflow-hidden overflow-ellipsis text-sm"
+         v-else
+      >{{ lastMessageContent }}</p>
     </div>
   </div>
 </template>
@@ -33,9 +40,7 @@ export default defineComponent({
   setup(props) {
     const userName = computed(() => {
       if (!(props.card && props.name)) return
-
       const {card, name} = props
-
       if (card.userSelf || name === 'userSelf') {
         return 'Me'
       }
@@ -48,15 +53,12 @@ export default defineComponent({
 
     const lastMessage = computed(() => {
       const {card} = props
-      const lastMessageIndex = card ? card.messages.length - 1 : 0
-      return card?.messages[lastMessageIndex] || ''
+      return card?.lastMessage
     })
 
-    const lastMessageContent = computed(() => {
-      return lastMessage.value.message.length > 25 ? lastMessage.value.message.substring(0, 25) + '...' : lastMessage.value.message
-    })
+    const lastMessageContent = computed(() => lastMessage.value?.message)
 
-    const lastMessageTime = computed(() => getHoursAndMinutes(lastMessage.value.time))
+    const lastMessageTime = computed(() => lastMessage.value?.time ? getHoursAndMinutes(lastMessage.value.time) : '')
 
     return {
       userName,
