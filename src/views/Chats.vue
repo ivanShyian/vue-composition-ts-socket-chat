@@ -2,7 +2,9 @@
   <div class="chats pt-14 md:pt-20 flex justify-between h-screen">
     <div
       id="card-container"
-      class="chats-card overflow-y-auto direction pb-20 md:pb-2 w-1/5"
+      class="chats-card border border-opacity-30
+        border-gray-800 dark:border-gray-500 overflow-y-auto
+        direction pb-20 md:pb-2 w-80 box-shadow rounded-lg ml-2 mb-2"
     >
       <div v-if="hasChats">
         <chats-card

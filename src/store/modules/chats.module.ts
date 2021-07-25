@@ -13,7 +13,10 @@ interface OneChatInterface {
 
 interface StateChats {
   chats: OneChatInterface | Record<string, any>
-  hasNewMessage: boolean
+  hasNewMessage: boolean,
+  chatList: {
+    [key: string]: string
+  }
 }
 
 const module: Module<StateChats, StateChats> = {
@@ -21,13 +24,21 @@ const module: Module<StateChats, StateChats> = {
   state() {
     return {
       chats: {},
+      chatList: {},
       hasNewMessage: false
     }
   },
   mutations: {
     updateChats(state, payload) {
       const {users, userId}: {users: [], userId: string} = payload
-      state.chats = handleUsers(users, userId, state.chats)
+      state.chats = handleUsers(users, userId, state.chats, state.chatList)
+    },
+    addMessagesToExactChat(state, payload) {
+      const userName = payload.databaseID === state.chats.userSelf.userDatabaseID ? 'userSelf' : 'user_' + payload.databaseID
+      state.chats[userName] = {
+        ...state.chats[userName],
+        messages: payload.result
+      }
     },
     addConnectedChat(state, payload) {
       const {user}: {user: any} = payload
@@ -67,7 +78,6 @@ const module: Module<StateChats, StateChats> = {
           }
         }
       })
-      console.log(state.chats)
     },
     mutateChats(state, payload) {
       const {content, from, socketId, to, toDatabaseId}: {
@@ -102,8 +112,20 @@ const module: Module<StateChats, StateChats> = {
         }
       }
     },
+    setExistedChatsList(state, payload) {
+      if (Object.keys(state.chatList).length) {
+        state.chatList = {...state.chatList, ...payload}
+        return
+      }
+      state.chatList = payload
+    },
     changeNewMessageStatus(state, payload) {
       state.hasNewMessage = payload
+    },
+    clearChatsState(state) {
+      state.chats = {}
+      state.chatList = {}
+      state.hasNewMessage = false
     }
   },
   actions: {
@@ -126,13 +148,23 @@ const module: Module<StateChats, StateChats> = {
       const {content, toDatabaseId, fromSelf, to} = message as NewMessageObjectInterface
 
       dispatch('socket/sendMessageSocket', {content, fromSelf, to}, {root: true})
-
       commit('mutateChats', {
         content,
         socketId: rootGetters['socket/userSocketId'],
         from: rootGetters['socket/userSocketId'],
         toDatabaseId
       })
+    },
+    async fetchMessagesByChat({dispatch, commit}, payload) {
+      const result = await dispatch('auth/fetchChat', payload.chatId, {root: true})
+      commit('addMessagesToExactChat', {databaseID: payload.databaseID, result})
+      console.log({result})
+    },
+    addExistedChatsList({commit}, payload) {
+      commit('setExistedChatsList', payload)
+    },
+    clearState({commit}) {
+      commit('clearChatsState')
     }
   },
   getters: {
@@ -145,6 +177,9 @@ const module: Module<StateChats, StateChats> = {
     },
     myUserData: (state) => {
       return state.chats && state.chats.userSelf
+    },
+    chatIdByUserDatabaseId: (state) => (id: string) => {
+      return state.chatList[id]
     }
   }
 }

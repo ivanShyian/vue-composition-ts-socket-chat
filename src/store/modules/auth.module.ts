@@ -101,6 +101,7 @@ const module: Module<StateAuth, StateAuth> = {
           commit('setUserData', data)
           commit('setToken', token)
           dispatch('chats/addLastMessages', lastMessages, {root: true})
+          dispatch('chats/addExistedChatsList', firebase.chatsCollection, {root: true})
           commit('authStatusHandler', {
             error: false,
             success: true
@@ -122,8 +123,13 @@ const module: Module<StateAuth, StateAuth> = {
         })
       }
     },
-    logoutAndGoToLoginPage({commit}) {
+    async fetchChat(context, chatId) {
+      return await firebase.getAllLastMessagesOrExactChatMessages('messages', chatId)
+    },
+    logoutAndGoToLoginPage({commit, dispatch}) {
       commit('logout')
+      dispatch('chats/clearState', '', {root: true})
+      dispatch('socket/clearState', '', {root: true})
       router.push('/login')
     }
   },

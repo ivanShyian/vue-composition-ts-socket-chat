@@ -3,7 +3,6 @@ import 'firebase/auth'
 import 'firebase/database'
 import firebaseConfig from '../../firebase-config'
 import {randomId} from '@/utils/randomIdGenerator'
-import set = Reflect.set;
 
 firebase.initializeApp(firebaseConfig)
 
@@ -16,6 +15,7 @@ interface Credentials {
 
 export default class Firebase {
   chatsArray: null | string[] = null
+  chatsCollection: Record<never, string> | {[key: string]: string} = {}
   myUserDatabaseID: null | string = null
   usersByChat: Record<never, string> | {
     [key:string]: any
@@ -102,7 +102,6 @@ export default class Firebase {
       value,
       exactChat
     })
-    console.log({response})
     return response
   }
 
@@ -146,6 +145,17 @@ export default class Firebase {
   private __fetchLastMessagesByChatId = async(chat: string) => {
     const response = await firebase.database().ref().child('messages').child(chat).child('lastMessage').get()
     const users = await this.__fetchUsersByChat(chat)
+    console.log(chat, users)
+
+    const userID = users.length === 2 ? users.find((id: string) => id !== this.myUserDatabaseID) : users[0]
+    if (Object.keys(this.chatsCollection).length) {
+      this.chatsCollection = {
+        ...this.chatsCollection,
+        [userID]: chat
+      }
+    } else {
+      this.chatsCollection = {[userID]: chat}
+    }
 
     const separateUser = users.find((userID: string) => userID !== this.myUserDatabaseID)
     const userKey = separateUser ? await this.__decodeUserByDatabaseId(separateUser) : 'self'
@@ -221,7 +231,7 @@ export default class Firebase {
       chatList: [futureNewChatId]
     })
     await firebase.database().ref('/keys/' + [id]).set(uid)
-    await firebase.database().ref('/messages/' + [futureNewChatId]).set({
+    await firebase.database().ref('/messages/' + futureNewChatId).set({
       lastMessage: false,
       users: [id]
     })

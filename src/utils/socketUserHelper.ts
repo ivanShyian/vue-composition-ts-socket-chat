@@ -4,19 +4,27 @@ interface ItemOfUserSocketInterface {
   [key: string]: UserSocketInterface
 }
 
-export function handleUsers(users: [], socketID: string, containedUsers?: any): ItemOfUserSocketInterface | Record<never, string> {
+export function handleUsers(
+  users: any[],
+  socketID: string,
+  containedUsers: any,
+  chatList: {[key:string]: string}
+): ItemOfUserSocketInterface | Record<never, string> {
   if (users) {
     if (Object.keys(containedUsers).length) {
-      return sortAndConvertArrayToObject(setWrapperToEveryUser(compareIncludedUsersWithNewUsers(containedUsers, users), socketID))
+      return sortAndConvertArrayToObject(setWrapperToEveryUser(compareIncludedUsersWithNewUsers(containedUsers, users, chatList), socketID))
     }
     return sortAndConvertArrayToObject(setWrapperToEveryUser(users, socketID))
   }
-  return {}
+  return containedUsers
 }
 
-function compareIncludedUsersWithNewUsers(usersFromState: any[], usersFromPayload: any) {
+function compareIncludedUsersWithNewUsers(usersFromState: any[], usersFromPayload: any, chatList: {[key: string]: string}) {
   const arrayOfContainedUsers = Object.keys(usersFromState).map((u: any) => usersFromState[u])
   usersFromPayload.forEach((user: any) => {
+    if (Object.keys(chatList).length && !Object.keys(chatList).includes(user.userDatabaseID)) {
+      return
+    }
     const includeFunctionResult = arrayIncludesElementByIndex(arrayOfContainedUsers, user)
     if (includeFunctionResult !== -1) {
       arrayOfContainedUsers[includeFunctionResult] = {...arrayOfContainedUsers[includeFunctionResult], ...user}

@@ -2,37 +2,41 @@
   <div
     class="hidden md:flex flex-auto border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-transparent overflow-hidden h-full">
     <div class="flex md:flex-col md:justify-between flex-auto h-full">
-      <div class="border-b border-gray-700 px-4 py-3 bg-gray-800 flex justify-between">
+      <div class="border-b border-gray-700 px-4 py-2 bg-gray-800 flex justify-between items-center">
         <span>{{ currentChat.username }}</span>
-        <!--@TODO Was online-->
-        <span class="text-gray-500 text-sm">was online 1 hour ago</span>
+        <i class="fas fa-ellipsis-h text-xl cursor-auto opacity-20"></i>
       </div>
       <div
         id="message-container"
         class="h-full overflow-y-auto overflow-x-hidden bg-gray-800 px-2 py-3 flex flex-col">
-        <template v-if="chatIsAvailable">
+        <template v-if="currentChat.messages">
           <div
             v-for="(m, i) in currentChat.messages"
             :key="i"
             class="p-2 py-1 text-white dark:text-black flex first:mt-auto"
-            :class="m.fromSelf ? 'justify-end' : 'justify-start'"
+            :class="self.userDatabaseID === m.databaseID ? 'justify-end' : 'justify-start'"
           >
             <p
               class="bg-gray-700 dark:bg-gray-200 border py-1 px-4 rounded-lg max-w-2/5 d-flex break-words relative"
             >
               <span
-                v-if="m.fromSelf"
+                v-if="self.userDatabaseID === m.databaseID"
                 class="font-light text-xs"
-              >{{ getHoursAndMinutes(m.time) }}</span>
+              >{{ getHoursAndMinutes(+m.time) }}</span>
               <span
                 class="font-medium text-md"
-                :class="!m.fromSelf ? 'mr-4' : 'ml-4'"
+                :class="self.userDatabaseID !== m.databaseID ? 'mr-4' : 'ml-4'"
               >{{ m.message }}</span>
               <span
-                v-if="!m.fromSelf"
+                v-if="self.userDatabaseID !== m.databaseID"
                 class="font-light text-xs"
-              >{{ getHoursAndMinutes(m.time) }}</span>
+              >{{ getHoursAndMinutes(+m.time) }}</span>
             </p>
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex justify-center items-center h-full">
+            <AppSpinner/>
           </div>
         </template>
       </div>
@@ -72,14 +76,17 @@ import {
   ref,
   Ref,
   nextTick,
-  watch
+  watch,
+  onMounted
 } from 'vue'
 import {useStore} from 'vuex'
 import {NewMessageObjectInterface} from '@/modules/chats/ChatsInterfaces'
 import {useRoute} from 'vue-router'
 import {getHoursAndMinutes} from '@/utils/getCorrectTime'
+import AppSpinner from '@/components/ui/AppSpinner.vue'
 
 export default defineComponent({
+  components: {AppSpinner},
   setup() {
     const store = useStore()
     const route = useRoute()
@@ -96,6 +103,11 @@ export default defineComponent({
       messageContainer.scrollTo({top: messageContainerHeight})
     }
 
+    /* Here we are fetching current chat messages */
+    watch(currentChat, (user, previousValue) => {
+      fetchChat(user)
+    }, {immediate: true})
+
     /* Scrolling bottom after every chat changing */
     watch(() => route.path, (currentRoute, previousRoute) => {
       if (previousRoute && currentRoute !== previousRoute && chatIsAvailable.value) {
@@ -110,19 +122,29 @@ export default defineComponent({
       }
     }, {immediate: true})
 
+    function fetchChat(user: any): void {
+      if (!user) {
+        return
+      }
+      if (currentChat.value.messages && currentChat.value.messages.length) {
+        return
+      }
+      const chatId = store.getters['chats/chatIdByUserDatabaseId'](user.userDatabaseID)
+      if (chatId) {
+        console.log(user.userDatabaseID)
+        store.dispatch('chats/fetchMessagesByChat', {chatId, databaseID: user.userDatabaseID})
+      }
+    }
     const sendMessage = (): void => {
       const userSelf = self.value
 
       if (!messageText.value.length) {
         return
       }
-      console.log(currentChat)
-
       if (!currentChat.value) {
         return
       }
 
-      // TODO Temporary. Need to parse time depends of local
       const newMessage: NewMessageObjectInterface = {
         content: {
           nickname: userSelf.username,
@@ -138,6 +160,7 @@ export default defineComponent({
       messageText.value = ''
     }
     return {
+      self,
       messageText,
       sendMessage,
       currentChat,

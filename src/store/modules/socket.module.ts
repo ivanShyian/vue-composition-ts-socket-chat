@@ -52,6 +52,10 @@ const module: Module<StateSocket, StateSocket> = {
     },
     destroySocketConnection(state) {
       state.socket.off('connect_error')
+    },
+    clearSocketState(state) {
+      state.socket.disconnect()
+      localStorage.removeItem('socketSessionID')
     }
   },
   actions: {
@@ -111,6 +115,9 @@ const module: Module<StateSocket, StateSocket> = {
         username: data.nickname,
         userDatabaseID: data.id
       }
+    },
+    clearState({commit}) {
+      commit('clearSocketState')
     }
   },
   getters: {

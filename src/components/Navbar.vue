@@ -1,17 +1,20 @@
 <template>
   <div class="py-3 md:py-5 bg-gray-500 dark:bg-gray-800 shadow-md flex justify-between px-4 fixed top-0 left-0 right-0 z-50">
     <span class="text-xl md:text-2xl text-white font-bold font-mono gradient-animation cursor-pointer">isCHAT?</span>
-    <div
+    <button
       id="powerOffButton"
-      class="flex items-center cursor-auto justify-center opacity-60 hover:opacity-100 transition-all duration-300"
+      class="flex items-center cursor-auto justify-center focus:outline-none"
       @click.prevent="logout"
     >
       <span
         class="pr-2 pt-0.5 uppercase text-xs font-bold tracking-wider cursor-pointer"
         :class="appear ? 'appeared' : 'disappeared'"
       >Logout</span>
-      <i class="fas fa-power-off cursor-pointer text-lg"></i>
-    </div>
+      <i
+        :class="{'opacity-100': appear}"
+        class="fas fa-power-off cursor-pointer text-lg opacity-60 hover:opacity-100 transition-all duration-300"
+      ></i>
+    </button>
   </div>
 </template>
 
@@ -25,19 +28,26 @@ export default defineComponent({
 
     onMounted(() => {
       const powerButton = document.querySelector('#powerOffButton') as HTMLElement
-      powerButton.addEventListener('mouseenter', (event: any) => toggleAppearValue(event))
+      for (let i = 0; i < powerButton.children.length; i++) {
+        const child = powerButton.children[i]
+        if (child.tagName === 'I') {
+          child.addEventListener('mouseenter', (event: any) => toggleAppearValue(event))
+          break
+        }
+      }
       powerButton.addEventListener('mouseleave', (event: any) => toggleAppearValue(event))
     })
 
-    function toggleAppearValue(event: any) {
-      appear.value = !appear.value
+    function toggleAppearValue(event: Event) {
+      if (event.type === 'mouseleave' && appear.value) {
+        appear.value = false
+        return
+      }
+      if (event.type === 'mouseleave' && !appear.value) {
+        return
+      }
+      appear.value = true
     }
-
-    onUnmounted(() => {
-      const powerButton = document.querySelector('#powerOffButton') as HTMLElement
-      powerButton.removeEventListener('mouseenter', toggleAppearValue)
-      powerButton.removeEventListener('mouseleave', toggleAppearValue)
-    })
 
     return {
       logout: () => {
@@ -49,26 +59,6 @@ export default defineComponent({
 })
 </script>
 <style lang="scss">
-.gradient-animation {
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-@keyframes gradient {
-  0% {
-    background-position: 0 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0 50%;
-  }
-}
-
 .disappeared {
   transform: translateX(200px);
   opacity: 0;

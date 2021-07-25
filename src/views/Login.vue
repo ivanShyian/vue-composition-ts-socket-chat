@@ -14,7 +14,6 @@
             v-model="email"
             @blur="emailBlur"
             class="outline-none py-1.5 px-3 rounded-xl bg-blue-100 focus:ring-2 focus:ring-yellow-600 text-blue-900">
-<!--          <span class="py-2.5" v-if="!emailError"></span>-->
           <span class="text-sm text-red-600 pl-2 pt-1 absolute -bottom-6 right-0" v-if="emailError">{{ emailError }}</span>
         </div>
         <div class="flex flex-col mb-8 md:mb-10 relative">
@@ -50,8 +49,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import { useAuth } from '@/use/authentication'
+import {defineComponent} from 'vue'
+import {useAuth} from '@/use/authentication'
 
 export default defineComponent({
   setup() {

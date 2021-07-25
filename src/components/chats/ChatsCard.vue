@@ -1,17 +1,16 @@
 <template>
   <div
-      class="shadow-sm border-b border-opacity-30 py-2.5 pl-3 w-auto flex flex-none ml-2 mr-1
+      class="shadow-sm border-b border-opacity-30 py-2.5 pl-3 w-auto flex flex-none
       border-gray-800 dark:border-gray-500 bg-gray-100 dark:bg-transparent cursor-pointer
-      dark:hover:bg-blue-50 dark:hover:bg-opacity-10 transition-all duration-300">
-    <div class="w-1/4 mr-3 md:w-1/6 flex items-center">
-      <img
-        class="border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-full w-full flex justify-center items-center"
-        src="@/assets/logo.png"/>
-    </div>
+      dark:hover:bg-blue-50 dark:hover:bg-opacity-10 transition-all duration-300"
+  >
+    <ChatsCardAvatar
+      :user-name="avatarName"
+    />
     <div class="w-3/4 flex flex-col">
       <div class="mb-1 flex justify-between">
-        <span>{{ userName}}</span>
-        <span class="text-sm">{{ lastMessageTime }}</span>
+        <span class="w-1/2">{{ userName }}</span>
+        <span class="text-sm w-1/2 text-right">{{ lastMessageTime }}</span>
       </div>
       <p class="whitespace-nowrap overflow-hidden overflow-ellipsis text-sm text-blue-200 text-opacity-20"
          v-if="lastMessageContent === ''"
@@ -26,8 +25,10 @@
 <script lang="ts">
 import {computed, defineComponent} from 'vue'
 import {getHoursAndMinutes} from '@/utils/getCorrectTime'
+import ChatsCardAvatar from '@/components/chats/ChatsCardAvatar.vue'
 
 export default defineComponent({
+  components: {ChatsCardAvatar},
   props: {
     card: {
       type: Object,
@@ -47,8 +48,8 @@ export default defineComponent({
       return card.username || Object.keys(card).map(i => card[i].username)[0]
     })
 
-    const avatar = computed(() => {
-      return props.card?.username ? props.card?.username.substring(0, 2) : 'x'
+    const avatarName = computed(() => {
+      return props.card?.username ? props.card.username : ''
     })
 
     const lastMessage = computed(() => {
@@ -62,7 +63,7 @@ export default defineComponent({
 
     return {
       userName,
-      avatar,
+      avatarName,
       lastMessageTime,
       lastMessageContent
     }
@@ -70,6 +71,5 @@ export default defineComponent({
 })
 </script>
 
-<style scoped>
-
+<style lang="scss" scoped>
 </style>
