@@ -4,23 +4,25 @@
       id="card-container"
       class="chats-card border border-opacity-30
         border-gray-800 dark:border-gray-500 overflow-y-auto
-        direction pb-20 md:pb-2 w-80 box-shadow rounded-lg ml-2 mb-2"
+        direction pb-20 md:pb-2 md:w-72 xl:w-80 w-full box-shadow rounded-lg ml-0 md:ml-2 mb-2 flex-shrink-0"
     >
-      <div v-if="hasChats">
+      <template v-if="hasChats">
         <chats-card
           v-for="(chat, chatName, key) in chats"
           :key="key"
           :card="chat"
           :name="chatName"
           @click.prevent="choiceChat(chat)"
-        ></chats-card>
-      </div>
-      <div v-else
-           class="text-center text-lg font-light tracking-wider mt-6 overflow-hidden">
-        <span>Loading...</span>
-      </div>
+        />
+      </template>
+      <template v-else>
+        <app-pseudo-card
+          v-for="p in 2"
+          :key="p"
+        />
+      </template>
     </div>
-    <div class="container mx-auto w-5/6 border-white border-opacity-20 h-full pb-2">
+    <div class="container mx-auto w-full md:w-5/6 border-white border-opacity-20 h-full pb-2">
       <router-view></router-view>
     </div>
   </div>
@@ -29,11 +31,12 @@
 <script lang="ts">
 import {
   defineComponent,
-  computed
+  computed, onUnmounted
 } from 'vue'
 import {useStore} from 'vuex'
 import {useRoute, useRouter} from 'vue-router'
 import ChatsCard from '@/components/chats/ChatsCard.vue'
+import AppPseudoCard from '@/components/ui/AppPseudoCard.vue'
 
 export default defineComponent({
   setup() {
@@ -58,6 +61,9 @@ export default defineComponent({
       }
       router.push(`/chats/${pickedUsername}`)
     }
+    onUnmounted(() => {
+      localStorage.setItem('ho', 'hey')
+    })
     return {
       chats,
       hasChats,
@@ -65,6 +71,7 @@ export default defineComponent({
     }
   },
   components: {
+    AppPseudoCard,
     ChatsCard
   }
 })

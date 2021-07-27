@@ -1,5 +1,5 @@
 <template>
-  <form>
+  <form class="border-2 rounded-lg py-8 px-12 mt-20 modal-shadow">
     <div class="flex flex-col w-96 font-bold">
       <div class="flex flex-col mb-4 relative">
         <label for="nickname" class="pl-2 pb-2">

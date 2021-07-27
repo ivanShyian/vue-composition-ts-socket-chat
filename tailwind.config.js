@@ -28,6 +28,9 @@ module.exports = {
       '1/2': '50%',
       '2/5': '40%'
     },
+    minWidth: {
+      10: '10rem'
+    },
     container: {
       padding: '.5rem'
     },

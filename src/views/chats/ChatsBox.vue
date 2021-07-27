@@ -1,38 +1,40 @@
 <template>
   <div
-    class="hidden md:flex flex-auto border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-transparent overflow-hidden h-full">
-    <div class="flex md:flex-col md:justify-between flex-auto h-full">
+    class="flex flex-auto border border-opacity-30 border-gray-800 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-transparent overflow-hidden h-full">
+    <div class="flex flex-col md:justify-between flex-auto h-full">
       <div class="border-b border-gray-700 px-4 py-2 bg-gray-800 flex justify-between items-center">
+        <i class="fas fa-grip-lines"></i>
         <span>{{ currentChat.username }}</span>
         <i class="fas fa-ellipsis-h text-xl cursor-auto opacity-20"></i>
       </div>
       <div
         id="message-container"
         class="h-full overflow-y-auto overflow-x-hidden bg-gray-800 px-2 py-3 flex flex-col">
-        <template v-if="currentChat.messages">
-          <div
-            v-for="(m, i) in currentChat.messages"
-            :key="i"
-            class="p-2 py-1 text-white dark:text-black flex first:mt-auto"
-            :class="self.userDatabaseID === m.databaseID ? 'justify-end' : 'justify-start'"
-          >
-            <p
-              class="bg-gray-700 dark:bg-gray-200 border py-1 px-4 rounded-lg max-w-2/5 d-flex break-words relative"
+        <template v-if="showChat">
+          <template v-if="currentChat.messages">
+            <div
+              v-for="(m, i) in currentChat.messages"
+              :key="i"
+              class="p-2 py-1 text-white dark:text-black flex first:mt-auto"
+              :class="self.userDatabaseID === m.databaseID ? 'justify-end' : 'justify-start'"
             >
+              <p
+                class="bg-gray-700 dark:bg-gray-200 border py-1 px-4 rounded-lg max-w-2/5 d-flex break-words relative"
+              >
               <span
                 v-if="self.userDatabaseID === m.databaseID"
-                class="font-light text-xs"
+                class="font-light text-xs absolute bottom-1.5 right-2"
               >{{ getHoursAndMinutes(+m.time) }}</span>
-              <span
-                class="font-medium text-md"
-                :class="self.userDatabaseID !== m.databaseID ? 'mr-4' : 'ml-4'"
-              >{{ m.message }}</span>
-              <span
-                v-if="self.userDatabaseID !== m.databaseID"
-                class="font-light text-xs"
-              >{{ getHoursAndMinutes(+m.time) }}</span>
-            </p>
-          </div>
+                <span
+                  class="font-medium text-md mr-7"
+                >{{ m.message }}</span>
+                <span
+                  v-if="self.userDatabaseID !== m.databaseID"
+                  class="font-light text-xs"
+                >{{ getHoursAndMinutes(+m.time) }}</span>
+              </p>
+            </div>
+          </template>
         </template>
         <template v-else>
           <div class="flex justify-center items-center h-full">
@@ -77,7 +79,7 @@ import {
   Ref,
   nextTick,
   watch,
-  onMounted
+  onMounted, onUnmounted
 } from 'vue'
 import {useStore} from 'vuex'
 import {NewMessageObjectInterface} from '@/modules/chats/ChatsInterfaces'
@@ -92,6 +94,7 @@ export default defineComponent({
     const route = useRoute()
 
     const messageText: Ref<string> = ref('')
+    const wasFetched: Ref<boolean> = ref(false)
 
     const self = computed(() => store.getters['chats/myUserData'])
     const currentChat = computed(() => store.getters['chats/currentChat'](route.params.userID))
@@ -103,13 +106,15 @@ export default defineComponent({
       messageContainer.scrollTo({top: messageContainerHeight})
     }
 
-    /* Here we are fetching current chat messages */
-    watch(currentChat, (user, previousValue) => {
-      fetchChat(user)
-    }, {immediate: true})
+    const showChat = computed(() => {
+      return !!(('messages' in currentChat.value) && Array.isArray(currentChat.value.messages))
+    })
 
-    /* Scrolling bottom after every chat changing */
+    /* Scrolling bottom after every chat changing and reset fetch status also here */
     watch(() => route.path, (currentRoute, previousRoute) => {
+      if (previousRoute && currentRoute !== previousRoute) {
+        wasFetched.value = false
+      }
       if (previousRoute && currentRoute !== previousRoute && chatIsAvailable.value) {
         nextTick(() => scrollBottom())
       }
@@ -122,19 +127,33 @@ export default defineComponent({
       }
     }, {immediate: true})
 
-    function fetchChat(user: any): void {
+    /* Here we are fetching current chat messages */
+    watch(currentChat, (user, previousValue) => {
+      if (user) {
+        fetchChat(user)
+      }
+    }, {immediate: true})
+
+    async function fetchChat(user: any): Promise<void> {
       if (!user) {
         return
       }
-      if (currentChat.value.messages && currentChat.value.messages.length) {
+
+      if (wasFetched.value) {
         return
       }
+
+      if ('messages' in currentChat.value && Array.isArray(currentChat.value.messages)) {
+        return
+      }
+
       const chatId = store.getters['chats/chatIdByUserDatabaseId'](user.userDatabaseID)
       if (chatId) {
-        console.log(user.userDatabaseID)
-        store.dispatch('chats/fetchMessagesByChat', {chatId, databaseID: user.userDatabaseID})
+        await store.dispatch('chats/fetchMessagesByChat', {chatId, databaseID: user.userDatabaseID})
+        wasFetched.value = true
       }
     }
+
     const sendMessage = (): void => {
       const userSelf = self.value
 
@@ -165,7 +184,8 @@ export default defineComponent({
       sendMessage,
       currentChat,
       chatIsAvailable,
-      getHoursAndMinutes
+      getHoursAndMinutes,
+      showChat
     }
   }
 })

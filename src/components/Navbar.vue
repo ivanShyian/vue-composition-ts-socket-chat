@@ -1,6 +1,11 @@
 <template>
-  <div class="py-3 md:py-5 bg-gray-500 dark:bg-gray-800 shadow-md flex justify-between px-4 fixed top-0 left-0 right-0 z-50">
+  <div
+    class="py-1 md:py-4 bg-gray-500 dark:bg-gray-800 shadow-md flex justify-between items-center px-4 fixed top-0 left-0 right-0 z-50">
     <span class="text-xl md:text-2xl text-white font-bold font-mono gradient-animation cursor-pointer">isCHAT?</span>
+    <div class="hidden toggle-bar relative border opacity-50 hover:opacity-80 h-6 w-14 rounded-2xl text-sm flex justify-between items-center px-1">
+      <i class="far fa-sun relative z-10"></i>
+      <i class="far fa-moon relative z-10"></i>
+    </div>
     <button
       id="powerOffButton"
       class="flex items-center cursor-auto justify-center focus:outline-none"
@@ -21,6 +26,7 @@
 <script lang="ts">
 import {defineComponent, onMounted, onUnmounted, ref} from 'vue'
 import {useStore} from 'vuex'
+
 export default defineComponent({
   setup() {
     const store = useStore()
@@ -69,5 +75,17 @@ export default defineComponent({
   transform: translateX(0);
   opacity: 1;
   transition: transform .2s ease-out, opacity 1s ease-in-out;
+}
+
+.toggle-bar:before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  bottom: 0;
+  left: 2px;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background-color: aliceblue;
 }
 </style>

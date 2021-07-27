@@ -13,13 +13,27 @@ interface Credentials {
   id?: string
 }
 
-export default class Firebase {
+interface FirebaseInterface {
+  chatsArray: null | string[]
+  chatsCollection: {[key: string]: string}
+  myUserDatabaseID: null | string
+  usersByChat: {[key: string]: any}
+}
+
+export default class Firebase implements FirebaseInterface {
   chatsArray: null | string[] = null
-  chatsCollection: Record<never, string> | {[key: string]: string} = {}
+  chatsCollection: {[key: string]: string} = {}
   myUserDatabaseID: null | string = null
-  usersByChat: Record<never, string> | {
-    [key:string]: any
-  } = {}
+  usersByChat: {[key: string]: any} = {}
+
+  private static _instance: Firebase
+
+  constructor() {
+    if (!Firebase._instance) {
+      Firebase._instance = this
+    }
+    return Firebase._instance
+  }
 
   public async observable(): Promise<{
     nickname: string,
@@ -53,7 +67,7 @@ export default class Firebase {
       if (!(email.length && password.length)) {
         throw new Error('All fields must be filled up')
       }
-      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION)
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
       const {user} = await this.__authenticateByEmail({
         email,
         password
@@ -70,7 +84,7 @@ export default class Firebase {
     }
   }
 
-  public async register({email, password, nickname, id}: Credentials): Promise<{ state: boolean }> {
+  public async register({email, password, nickname, id}: Credentials): Promise<{state: boolean}> {
     try {
       if (!(email?.length && password?.length && nickname?.length && id?.length)) {
         throw new Error('All fields must be filled up')
@@ -103,6 +117,16 @@ export default class Firebase {
       exactChat
     })
     return response
+  }
+
+  public async sendMessage(content: any, chatID: string) {
+    await this.__sendMessageToDatabase(content, chatID)
+  }
+
+  private async __sendMessageToDatabase(content: any, chatID: string) {
+    await firebase.database().ref().child('messages').child(chatID).child('messages').push(content)
+    delete content.databaseID
+    await firebase.database().ref().child('messages').child(chatID).child('lastMessage').set(content)
   }
 
   private async __getUser(): Promise<firebase.User | null> {
@@ -145,7 +169,6 @@ export default class Firebase {
   private __fetchLastMessagesByChatId = async(chat: string) => {
     const response = await firebase.database().ref().child('messages').child(chat).child('lastMessage').get()
     const users = await this.__fetchUsersByChat(chat)
-    console.log(chat, users)
 
     const userID = users.length === 2 ? users.find((id: string) => id !== this.myUserDatabaseID) : users[0]
     if (Object.keys(this.chatsCollection).length) {

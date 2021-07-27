@@ -1,6 +1,9 @@
 import {Module} from 'vuex'
 import {handleUsers} from '@/utils/socketUserHelper'
 import {NewMessageObjectInterface} from '@/modules/chats/ChatsInterfaces'
+import Firebase from '@/utils/Firebase'
+
+const firebase = new Firebase()
 
 interface OneChatInterface {
   [key: string]: {
@@ -35,9 +38,13 @@ const module: Module<StateChats, StateChats> = {
     },
     addMessagesToExactChat(state, payload) {
       const userName = payload.databaseID === state.chats.userSelf.userDatabaseID ? 'userSelf' : 'user_' + payload.databaseID
+      const messages = payload.result
+        ? Object.keys(payload.result).map((message: any) => (payload.result[message]))
+        : []
+
       state.chats[userName] = {
         ...state.chats[userName],
-        messages: payload.result
+        messages
       }
     },
     addConnectedChat(state, payload) {
@@ -55,11 +62,12 @@ const module: Module<StateChats, StateChats> = {
         return
       }
       chats.forEach((chat: any) => {
+        console.log({chat})
         const chatName = chat.chatUser === 'self' ? 'userSelf' : chat.chatUser.id
         const databaseID = chat.databaseID || chat.chatUser.id
         const message = {
           message: chat.message || '',
-          time: chat.timestamp || null,
+          time: chat.time || null,
           nickname: 'some',
           databaseID
         }
@@ -74,18 +82,19 @@ const module: Module<StateChats, StateChats> = {
           [chatName]: {
             userDatabaseID: databaseID,
             lastMessage: message,
-            username: chat.chatUser.nickname || null
+            username: chat.chatUser.nickname ?? null
           }
         }
       })
     },
     mutateChats(state, payload) {
-      const {content, from, socketId, to, toDatabaseId}: {
+      const {content, from, socketId, to, toDatabaseId, lastMessage = false}: {
         content: any
         from: string
         socketId: string
         to: string
         toDatabaseId: string
+        lastMessage: boolean
       } = payload
 
       // socketId is myUser id
@@ -97,18 +106,20 @@ const module: Module<StateChats, StateChats> = {
           ? `user_${toDatabaseId}`
           : `user_${content.databaseID}`
 
-      // if (user[u].nickname !== selectedChatNickname) {
-      // await store.dispatch('chats/setStatusThatUserHasNewMessage', true)
-      // }
-
       if (Object.keys(state.chats).indexOf(receiver) !== -1) {
         if ('messages' in state.chats[receiver]) {
           state.chats[receiver].messages.push({...content, fromSelf})
+          if (lastMessage) {
+            state.chats[receiver].lastMessage = content
+          }
           return
         }
         state.chats[receiver] = {
           ...state.chats[receiver],
           messages: [{...content, fromSelf}]
+        }
+        if (lastMessage) {
+          state.chats[receiver].lastMessage = content
         }
       }
     },
@@ -144,7 +155,7 @@ const module: Module<StateChats, StateChats> = {
     addLastMessages({commit}, payload) {
       commit('setLastMessages', payload)
     },
-    sendMessageAndEmitSocket({commit, dispatch, rootGetters}, message: NewMessageObjectInterface) {
+    async sendMessageAndEmitSocket({commit, dispatch, rootGetters, getters}, message: NewMessageObjectInterface) {
       const {content, toDatabaseId, fromSelf, to} = message as NewMessageObjectInterface
 
       dispatch('socket/sendMessageSocket', {content, fromSelf, to}, {root: true})
@@ -152,13 +163,15 @@ const module: Module<StateChats, StateChats> = {
         content,
         socketId: rootGetters['socket/userSocketId'],
         from: rootGetters['socket/userSocketId'],
-        toDatabaseId
+        toDatabaseId,
+        lastMessage: true
       })
+
+      await firebase.sendMessage(content, getters.chatIdByUserDatabaseId(toDatabaseId))
     },
     async fetchMessagesByChat({dispatch, commit}, payload) {
       const result = await dispatch('auth/fetchChat', payload.chatId, {root: true})
       commit('addMessagesToExactChat', {databaseID: payload.databaseID, result})
-      console.log({result})
     },
     addExistedChatsList({commit}, payload) {
       commit('setExistedChatsList', payload)

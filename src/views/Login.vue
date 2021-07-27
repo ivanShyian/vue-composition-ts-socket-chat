@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-center content-center h-full">
+  <div class="border-2 rounded-lg py-8 px-12 mt-20 modal-shadow flex justify-center content-center h-full">
     <form>
       <div class="flex flex-col md:w-96 font-bold">
         <div class="flex flex-col mb-4 md:mb-6 relative">
