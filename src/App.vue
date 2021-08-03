@@ -5,15 +5,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import {defineComponent, computed, onMounted} from 'vue'
+import {useRoute} from 'vue-router'
 import LoginLayout from './layouts/LoginLayout.vue'
 import MainLayout from './layouts/MainLayout.vue'
+
 export default defineComponent({
   setup() {
     const route = useRoute()
 
-    onMounted(() => {
+    onMounted(async() => {
       setHTMLClass()
     })
 
@@ -21,6 +22,7 @@ export default defineComponent({
     function setHTMLClass(): void {
       (document.querySelector('html') as HTMLHtmlElement).classList.add('dark')
     }
+
     // TODO temporary returning statement
     const activeLayout = computed((): string => {
       return route.meta.auth ? 'main' : 'login'

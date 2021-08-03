@@ -2,6 +2,8 @@ import {Module} from 'vuex'
 import {handleUsers} from '@/utils/socketUserHelper'
 import {NewMessageObjectInterface} from '@/modules/chats/ChatsInterfaces'
 import Firebase from '@/utils/Firebase'
+import {axiosBase} from '@/axios/request'
+import {AxiosResponse} from 'axios'
 
 const firebase = new Firebase()
 
@@ -11,6 +13,24 @@ interface OneChatInterface {
     messages: [{
       [key: string]: any
     }]
+  }
+}
+
+interface ChatListItemInterface {
+  chatUser: string | {
+    email: string
+    id: string
+    nickname?: string
+  }
+  message: string | null
+  nickname: string
+  time: number
+}
+
+interface ChatListResponse {
+  lastMessages: ChatListItemInterface[] | null
+  chatsCollection: {
+    [key: string]: string
   }
 }
 
@@ -152,8 +172,20 @@ const module: Module<StateChats, StateChats> = {
     addNewMessage({commit}, message) {
       commit('mutateChats', message)
     },
-    addLastMessages({commit}, payload) {
-      commit('setLastMessages', payload)
+    async fetchChatList({commit, rootGetters}): Promise<void> {
+      const {uid, id} = rootGetters['auth/userData']
+      try {
+        const {data}: AxiosResponse<ChatListResponse> = await axiosBase.post('/chats/list', JSON.stringify({
+          uid,
+          id
+        }))
+        if (data.lastMessages) {
+          commit('setLastMessages', data.lastMessages)
+          commit('setExistedChatsList', data.chatsCollection)
+        }
+      } catch (e) {
+        console.error(e.message | e)
+      }
     },
     async sendMessageAndEmitSocket({commit, dispatch, rootGetters, getters}, message: NewMessageObjectInterface) {
       const {content, toDatabaseId, fromSelf, to} = message as NewMessageObjectInterface
@@ -172,9 +204,6 @@ const module: Module<StateChats, StateChats> = {
     async fetchMessagesByChat({dispatch, commit}, payload) {
       const result = await dispatch('auth/fetchChat', payload.chatId, {root: true})
       commit('addMessagesToExactChat', {databaseID: payload.databaseID, result})
-    },
-    addExistedChatsList({commit}, payload) {
-      commit('setExistedChatsList', payload)
     },
     clearState({commit}) {
       commit('clearChatsState')

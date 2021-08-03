@@ -3,6 +3,7 @@ import {StatusType} from '@/modules/store/AuthTypes'
 import {UserInterface} from '@/modules/chats/ChatsModule'
 import router from '@/router/index'
 import Firebase from '@/utils/Firebase'
+import {axiosBase} from '@/axios/request'
 
 interface StateAuth {
   user: UserInterface | null,
@@ -34,8 +35,9 @@ const module: Module<StateAuth, StateAuth> = {
       }
     },
     setUserData(state, user) {
-      const {nickname, other} = user
-      state.user = {...other, username: nickname}
+      if (user) {
+        state.user = user
+      }
     },
     authStatusHandler(state, payload) {
       state.status = payload
@@ -74,16 +76,18 @@ const module: Module<StateAuth, StateAuth> = {
     },
     async register({dispatch, commit}, payload): Promise<void> {
       try {
-        await firebase.register({
+        // We didnt required to check all data passed to this function, because of yup keep it
+        const {data} = await axiosBase.post('/registration', ({
           email: payload.email,
           password: payload.password,
           nickname: payload.nickname,
           id: payload.id
-        })
-        await dispatch('login', {
-          email: payload.email,
-          password: payload.password
-        })
+        }))
+        console.log({data})
+        // await dispatch('login', {
+        //   email: payload.email,
+        //   password: payload.password
+        // })
       } catch (e) {
         console.error(e.response?.data?.error?.message || e)
         commit('authStatusHandler', {
@@ -92,21 +96,17 @@ const module: Module<StateAuth, StateAuth> = {
         })
       }
     },
-    async getUserData({commit, dispatch}): Promise<UserInterface | undefined> {
+    async fetchUserData({commit, dispatch}): Promise<UserInterface | undefined> {
       try {
-        // @@TODO Temporary
         const res: any = await firebase.observable()
         if (res && res.token) {
-          const {token, lastMessages, ...data} = res
+          const {token, ...data} = res
           commit('setUserData', data)
           commit('setToken', token)
-          dispatch('chats/addLastMessages', lastMessages, {root: true})
-          dispatch('chats/addExistedChatsList', firebase.chatsCollection, {root: true})
           commit('authStatusHandler', {
             error: false,
             success: true
           })
-          return data
         }
         commit('authStatusHandler', {
           error: false,
@@ -124,7 +124,7 @@ const module: Module<StateAuth, StateAuth> = {
       }
     },
     async fetchChat(context, chatId) {
-      return await firebase.getAllLastMessagesOrExactChatMessages('messages', chatId)
+      // return await firebase.getAllLastMessagesOrExactChatMessages('messages', chatId)
     },
     logoutAndGoToLoginPage({commit, dispatch}) {
       commit('logout')

@@ -1,7 +1,10 @@
 <template>
-  <Navbar/>
-  <UserAuth/>
-  <router-view/>
+  <UserAuth>
+    <template #default>
+      <Navbar/>
+      <router-view/>
+    </template>
+  </UserAuth>
 </template>
 
 <script>

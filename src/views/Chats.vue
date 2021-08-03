@@ -6,7 +6,7 @@
         border-gray-800 dark:border-gray-500 overflow-y-auto
         direction pb-20 md:pb-2 md:w-72 xl:w-80 w-full box-shadow rounded-lg ml-0 md:ml-2 mb-2 flex-shrink-0"
     >
-      <template v-if="hasChats">
+      <template v-if="!loading">
         <chats-card
           v-for="(chat, chatName, key) in chats"
           :key="key"
@@ -31,12 +31,13 @@
 <script lang="ts">
 import {
   defineComponent,
-  computed, onUnmounted
+  computed
 } from 'vue'
 import {useStore} from 'vuex'
 import {useRoute, useRouter} from 'vue-router'
 import ChatsCard from '@/components/chats/ChatsCard.vue'
 import AppPseudoCard from '@/components/ui/AppPseudoCard.vue'
+import {useChats} from '@/use/chats'
 
 export default defineComponent({
   setup() {
@@ -44,8 +45,8 @@ export default defineComponent({
     const router = useRouter()
     const route = useRoute()
 
-    const chats = computed(() => store.getters['chats/allChats'])
-    const hasChats = computed(() => Object.keys(chats.value).length)
+    const userData = computed(() => store.getters['auth/userData'])
+    const {loading, chats, hasChats} = useChats('lastMessage', userData)
 
     const choiceChat = (chat: any): void => {
       const currentChatNickname = route.params.userID
@@ -61,13 +62,12 @@ export default defineComponent({
       }
       router.push(`/chats/${pickedUsername}`)
     }
-    onUnmounted(() => {
-      localStorage.setItem('ho', 'hey')
-    })
+
     return {
       chats,
       hasChats,
-      choiceChat
+      choiceChat,
+      loading
     }
   },
   components: {

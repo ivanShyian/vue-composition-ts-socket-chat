@@ -5,13 +5,13 @@ import {
   defineComponent,
   onMounted,
   onUnmounted,
-  ComputedRef
+  ComputedRef, VNode
 } from 'vue'
 import {useStore} from 'vuex'
 import {UserInterface} from '@/modules/chats/ChatsModule'
 
 export default defineComponent({
-  setup() {
+  setup(_, context) {
     const store = useStore()
     const user: ComputedRef<UserInterface | null> = computed(() => store.getters['auth/userData'])
 
@@ -21,9 +21,7 @@ export default defineComponent({
 
     const fetchUserDataAndConnectToSocket = async() => {
       const sessionID = localStorage.getItem('socketSessionID')
-      // Load current user
       const data = await getUserData()
-      // Load current user messages list
       await connectToChat({...data, sessionID, hasSocketData: !!sessionID})
     }
 
@@ -34,7 +32,8 @@ export default defineComponent({
         return store.getters['auth/userData']
       }
       // Else fetch user
-      return await store.dispatch('auth/getUserData')
+      await store.dispatch('auth/fetchUserData')
+      return store.getters['auth/userData']
     }
 
     const connectToChat = async(data: any): Promise<void> => {
@@ -57,7 +56,7 @@ export default defineComponent({
       store.commit('socket/destroySocketConnection')
     })
 
-    return () => h('div', null)
+    return (): VNode => h('div', context.slots.default ? context.slots.default() : '')
   }
 })
 </script>
