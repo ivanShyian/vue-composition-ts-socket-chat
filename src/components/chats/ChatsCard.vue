@@ -32,34 +32,34 @@ export default defineComponent({
   props: {
     card: {
       type: Object,
-      required: false
+      required: true
     },
-    name: {
-      type: String
+    myUser: {
+      type: Object,
+      required: true
     }
   },
   setup(props) {
+    const cardItem = computed(() => props.card)
+    const myUser = computed(() => props.myUser)
+    const nicknameCard = computed(() => cardItem.value?.nickname)
+    const myNickname = computed(() => myUser.value?.nickname)
+
     const userName = computed(() => {
-      if (!(props.card && props.name)) return
-      const {card, name} = props
-      console.log({card})
-      if (card.userSelf || name === 'userSelf') {
-        return 'Me'
-      }
-      return card.username || Object.keys(card).map(i => card[i].username)[0]
+      if (!nicknameCard.value) return 'Loading...'
+      if (nicknameCard.value === myNickname.value) return 'Me'
+      return (nicknameCard.value || Object.keys(cardItem.value).map(i => cardItem.value[i].nickname)[0])
     })
 
     const avatarName = computed(() => {
-      return props.card?.username ? props.card.username : ''
+      return nicknameCard.value || ''
     })
 
     const lastMessage = computed(() => {
-      const {card} = props
-      return card?.lastMessage
+      return cardItem.value.lastMessage
     })
 
     const lastMessageContent = computed(() => lastMessage.value?.message)
-
     const lastMessageTime = computed(() => lastMessage.value?.time ? getHoursAndMinutes(lastMessage.value.time) : '')
 
     return {

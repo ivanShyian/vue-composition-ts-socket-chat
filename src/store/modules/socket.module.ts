@@ -1,7 +1,7 @@
 import {io} from 'socket.io-client'
 import {Module} from 'vuex'
-import {NewMessageObjectInterface} from '@/modules/chats/ChatsInterfaces'
-import {StateSocket} from '@/modules/store/StoreModule'
+import {NewMessageObjectInterface} from '@/models/chats/ChatsInterfaces'
+import {StateSocket} from '@/models/store/StoreModule'
 
 const module: Module<StateSocket, StateSocket> = {
   namespaced: true,
@@ -105,14 +105,14 @@ const module: Module<StateSocket, StateSocket> = {
     authToSocket({state}, data) {
       if (!data.sessionID) {
         state.socket.auth = {
-          username: data.nickname,
+          nickname: data.nickname,
           userDatabaseID: data.id
         }
         return
       }
       state.socket.auth = {
         sessionID: data.sessionID,
-        username: data.nickname,
+        nickname: data.nickname,
         userDatabaseID: data.id
       }
     },

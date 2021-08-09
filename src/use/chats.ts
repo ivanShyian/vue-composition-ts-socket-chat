@@ -1,58 +1,94 @@
 import {Store, useStore} from 'vuex'
 import {computed, ComputedRef, Ref, ref, watch} from 'vue'
+import {useRoute} from 'vue-router'
+import {OneChatInterface} from '@/models/chats/ChatsInterfaces'
+// import {UserInterface} from '@/models/chats/UserInterfaces'
 
 type UserDataType = ComputedRef<null | {[key: string]: any}>
-type WatchDataType = UserDataType | null
 type BooleanRef = Ref<boolean>
+type FetchingType = 'messages' | 'lastMessage'
+// type WatchDataType = UserDataType | UserInterface | null
 
-export function useChats(fetchingType: string, indicator: UserDataType, fetchedChatId?: string): any {
+interface ChatsTypeReturning {
+  chats: ComputedRef<OneChatInterface[]>
+  loading: Ref<boolean>
+  hasChats: Ref<boolean>
+  fetched: Ref<boolean>
+}
+
+export function useChats(fetchingType: FetchingType, subscribedRef: UserDataType): ChatsTypeReturning {
   const store: Store<unknown> = useStore()
+  const route = useRoute()
   const loading = ref(true)
   const fetched = ref(false)
 
   const chats = computed(() => store.getters['chats/allChats'])
-  const hasChats = computed(() => Object.keys(chats.value).length)
+  const hasChats = computed(() => !!Object.keys(chats.value).length)
 
-  watch(indicator, async(value: WatchDataType, previousValue: WatchDataType) => {
-    await fetchHelper(fetchingType, previousValue, value, fetched, fetchedChatId)
-  })
+  watch(subscribedRef, async(value, previousValue) => {
+    if (value && previousValue !== value) {
+      await fetchHelper(fetchingType, previousValue, value, fetched)
+    }
+  }, {immediate: true})
+
+  watch(() => route.path, async(currentRoute, previousRoute) => {
+    if (previousRoute && currentRoute !== previousRoute) {
+      fetched.value = false
+    }
+  }, {immediate: true})
 
   function fetchHelper(
-    type: string,
-    previous: WatchDataType,
-    current: WatchDataType,
-    isFetched: BooleanRef,
-    fetchedChat?: string
+    type: FetchingType,
+    previous: any,
+    current: any,
+    isFetched: BooleanRef
   ) {
-    if (!previous && current && !isFetched.value) {
-      fetched.value = true
-
+    if (current && !isFetched.value) {
       switch (type) {
         case 'lastMessage':
           return fetchChatsList()
         case 'messages':
-          return fetchedChat && fetchMessagesByChatId(fetchedChat)
+          // subscribedRef is userObject that was passed from chatBox
+          return subscribedRef && fetchMessagesByChatId(subscribedRef)
       }
     }
   }
 
-  const fetchChatsList = async() => {
+  async function fetchChatsList() {
+    if (fetched.value) {
+      return
+    }
     await store.dispatch('chats/fetchChatList')
+    fetched.value = true
     loadingSuccessful()
   }
 
-  const fetchMessagesByChatId = async(chatId: string) => {
-    await store.dispatch('chats/fetchMessagesByChat', chatId)
+  async function fetchMessagesByChatId(computedUser: any) {
+    const user = computedUser.value
+    if (fetched.value) {
+      return
+    }
+
+    if (user && 'messages' in user && Array.isArray(user.messages)) {
+      return
+    }
+
+    const chatId = store.getters['chats/chatIdByUserDatabaseId'](user.userDatabaseID)
+    if (chatId) {
+      await store.dispatch('chats/fetchMessagesByChat', {chatId, databaseID: user.userDatabaseID})
+      fetched.value = true
+    }
     loadingSuccessful()
   }
 
-  const loadingSuccessful = () => {
+  function loadingSuccessful() {
     loading.value = false
   }
 
   return {
     loading,
     chats,
-    hasChats
+    hasChats,
+    fetched
   }
 }

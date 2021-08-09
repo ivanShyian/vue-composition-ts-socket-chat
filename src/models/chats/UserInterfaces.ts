@@ -3,6 +3,7 @@ export interface UserInterface {
   email: string
   id: string
   uid: string
+  userDatabaseID: string
   imgURL?: string
   status?: string
   lastOnline?: number

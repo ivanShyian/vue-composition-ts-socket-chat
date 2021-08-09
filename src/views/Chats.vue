@@ -1,17 +1,18 @@
 <template>
-  <div class="chats pt-14 md:pt-20 flex justify-between h-screen">
+  <div class="chats pt-12 md:pt-20 mx-2 md:mx-0 flex justify-between h-screen">
     <div
+      v-show="requiredToShowCards"
       id="card-container"
       class="chats-card border border-opacity-30
         border-gray-800 dark:border-gray-500 overflow-y-auto
-        direction pb-20 md:pb-2 md:w-72 xl:w-80 w-full box-shadow rounded-lg ml-0 md:ml-2 mb-2 flex-shrink-0"
+        direction pb-20 md:pb-2 md:w-72 xl:w-80 w-full box-shadow rounded-lg md:ml-2 md:mr-0 mb-2 flex-shrink-0"
     >
       <template v-if="!loading">
         <chats-card
-          v-for="(chat, chatName, key) in chats"
+          v-for="(chat, key) in chats"
           :key="key"
           :card="chat"
-          :name="chatName"
+          :my-user="userData"
           @click.prevent="choiceChat(chat)"
         />
       </template>
@@ -22,8 +23,11 @@
         />
       </template>
     </div>
-    <div class="container mx-auto w-full md:w-5/6 border-white border-opacity-20 h-full pb-2">
-      <router-view></router-view>
+    <div
+      v-show="requiredToShowChat"
+      class="mx-0 md:mx-2 w-full md:w-5/6 border-white border-opacity-20 h-full pb-2"
+    >
+      <router-view/>
     </div>
   </div>
 </template>
@@ -38,6 +42,7 @@ import {useRoute, useRouter} from 'vue-router'
 import ChatsCard from '@/components/chats/ChatsCard.vue'
 import AppPseudoCard from '@/components/ui/AppPseudoCard.vue'
 import {useChats} from '@/use/chats'
+import {useDisplayChatsController} from '@/use/displayChatsController'
 
 export default defineComponent({
   setup() {
@@ -50,7 +55,7 @@ export default defineComponent({
 
     const choiceChat = (chat: any): void => {
       const currentChatNickname = route.params.userID
-      const pickedUsername = chat.username
+      const pickedUsername = chat.nickname
 
       if (currentChatNickname) {
         if (currentChatNickname === pickedUsername) {
@@ -66,8 +71,10 @@ export default defineComponent({
     return {
       chats,
       hasChats,
+      userData,
+      loading,
       choiceChat,
-      loading
+      ...useDisplayChatsController()
     }
   },
   components: {

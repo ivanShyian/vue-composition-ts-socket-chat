@@ -2,7 +2,6 @@ import firebase from 'firebase/app'
 import 'firebase/auth'
 import 'firebase/database'
 import firebaseConfig from '../../firebase-config'
-import {randomId} from '@/utils/randomIdGenerator'
 import {axiosBase, setAuthToken} from '@/axios/request'
 
 firebase.initializeApp(firebaseConfig)
@@ -18,13 +17,17 @@ interface FirebaseInterface {
   chatsArray: null | string[]
   chatsCollection: {[key: string]: string}
   myUserDatabaseID: null | string
-  usersByChat: {[key: string]: any}
+}
+
+interface FirebaseUser {
+  email: string
+  id: string
+  nickname: string
+  uid: string
 }
 
 interface FirebaseLoginInterface {
-  user: {
-    [key: string]: any
-  }
+  user: FirebaseUser
   token: string
 }
 
@@ -38,7 +41,6 @@ export default class Firebase implements FirebaseInterface {
   chatsArray: null | string[] = null
   chatsCollection: {[key: string]: string} = {}
   myUserDatabaseID: null | string = null
-  usersByChat: {[key: string]: any} = {}
 
   private static _instance: Firebase
 
@@ -76,7 +78,7 @@ export default class Firebase implements FirebaseInterface {
 
       if (user) {
         const token = await this.__getTokenAndSetHeaders(user)
-        const databaseUser = await this.getUserData(user.uid)
+        const databaseUser = await this.getUserData(user.uid) as FirebaseUser
         return {token, user: databaseUser}
       }
     } catch (error) {
@@ -84,55 +86,25 @@ export default class Firebase implements FirebaseInterface {
     }
   }
 
-  // @TODO Register through backend
-  // public async register({email, password, nickname, id}: Credentials): Promise<{state: boolean}> {
-  //   try {
-  //     if (!(email?.length && password?.length && nickname?.length && id?.length)) {
-  //       throw new Error('All fields must be filled up')
-  //     }
-  //     await this.__createNewUser({
-  //       email,
-  //       password,
-  //       nickname,
-  //       id
-  //     })
-  //     return {
-  //       state: true
-  //     }
-  //   } catch (error) {
-  //     return error
-  //   }
-  // }
-
-  public async getUserData(uid: string) {
+  public async getUserData(uid: string): Promise<FirebaseUser | undefined> {
     try {
       const {data} = await axiosBase.post('/user/me', JSON.stringify({uid}))
-      this.myUserDatabaseID = data.id
-      return data
+      if (data) {
+        this.myUserDatabaseID = data.id
+        return data
+      }
     } catch (e) {
       console.error(e.message || e)
     }
-  }
-
-  // @TODO Send through backend
-  public async sendMessage(content: any, chatID: string) {
-    await this.__sendMessageToDatabase(content, chatID)
-  }
-
-  // @TODO Send through backend2
-  private async __sendMessageToDatabase(content: any, chatID: string) {
-    await firebase.database().ref().child('messages').child(chatID).child('messages').push(content)
-    delete content.databaseID
-    await firebase.database().ref().child('messages').child(chatID).child('lastMessage').set(content)
-  }
-
-  private __authenticateByEmail = async({email, password}: Credentials): Promise<firebase.auth.UserCredential> => {
-    return await firebase.auth().signInWithEmailAndPassword(email, password)
   }
 
   private __getTokenAndSetHeaders = async(user: any): Promise<string> => {
     const token = await user.getIdToken()
     await setAuthToken(token)
     return token
+  }
+
+  private __authenticateByEmail = async({email, password}: Credentials): Promise<firebase.auth.UserCredential> => {
+    return firebase.auth().signInWithEmailAndPassword(email, password)
   }
 }

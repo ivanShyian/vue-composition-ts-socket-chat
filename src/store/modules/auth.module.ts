@@ -1,6 +1,6 @@
 import {Module} from 'vuex'
-import {StatusType} from '@/modules/store/AuthTypes'
-import {UserInterface} from '@/modules/chats/ChatsModule'
+import {StatusType} from '@/models/store/AuthTypes'
+import {UserInterface} from '@/models/chats/UserInterfaces'
 import router from '@/router/index'
 import Firebase from '@/utils/Firebase'
 import {axiosBase} from '@/axios/request'
@@ -23,8 +23,11 @@ const module: Module<StateAuth, StateAuth> = {
   state() {
     return {
       user: null,
-      token: JSON.parse(localStorage.getItem(JWT_TOKEN)!) ?? {},
-      status: {}
+      token: localStorage.getItem(JWT_TOKEN) ? JSON.parse(localStorage.getItem(JWT_TOKEN) as string) : '',
+      status: {
+        success: false,
+        error: false
+      }
     }
   },
   mutations: {
@@ -57,9 +60,13 @@ const module: Module<StateAuth, StateAuth> = {
           email: payload.email,
           password: payload.password
         })
-        if (!(data?.user && data?.token)) {
+        if (!data) {
           return
         }
+        if (!data.user || !data.token) {
+          return
+        }
+
         commit('setUserData', data.user)
         commit('setToken', data.token)
         commit('authStatusHandler', {
@@ -83,11 +90,12 @@ const module: Module<StateAuth, StateAuth> = {
           nickname: payload.nickname,
           id: payload.id
         }))
-        console.log({data})
-        // await dispatch('login', {
-        //   email: payload.email,
-        //   password: payload.password
-        // })
+        if (data.state) {
+          await dispatch('login', {
+            email: payload.email,
+            password: payload.password
+          })
+        }
       } catch (e) {
         console.error(e.response?.data?.error?.message || e)
         commit('authStatusHandler', {
@@ -122,9 +130,6 @@ const module: Module<StateAuth, StateAuth> = {
           success: false
         })
       }
-    },
-    async fetchChat(context, chatId) {
-      // return await firebase.getAllLastMessagesOrExactChatMessages('messages', chatId)
     },
     logoutAndGoToLoginPage({commit, dispatch}) {
       commit('logout')

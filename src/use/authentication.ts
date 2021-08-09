@@ -2,7 +2,7 @@ import {useField, useForm} from 'vee-validate'
 import * as yup from 'yup'
 import {Store, useStore} from 'vuex'
 import {Router, useRouter} from 'vue-router'
-import {Ref, ComputedRef, computed} from 'vue'
+import {Ref, ComputedRef, computed, nextTick} from 'vue'
 import {randomId} from '@/utils/randomIdGenerator'
 
 type VuexStore = Store<unknown>
@@ -35,7 +35,7 @@ export function useAuth(isRegister?: boolean): AuthHook {
   )
   const {errorMessage: passwordError, value: password, handleBlur: passwordBlur} = useField(
     'password',
-    yup.string().required('Password is required').min(6).matches(/[a-zA-Z0-9]/, 'Password can only contain Latin letters.')
+    yup.string().required('Password is required').min(6, 'Required 6 characters minimum').matches(/[a-zA-Z0-9]/, 'Password can only contain Latin letters.')
   )
 
   const {errorMessage: nicknameError, value: nickname, handleBlur: nicknameBlur} = useField(
@@ -50,8 +50,10 @@ export function useAuth(isRegister?: boolean): AuthHook {
       email: email.value,
       password: password.value
     })
-    authStatus.value?.success && await router.push('/chats')
-    resetForm()
+    if (authStatus.value.success) {
+      resetForm()
+      await router.push('/chats')
+    }
   })
 
   const registerTo = handleSubmit(async(): Promise<void> => {
@@ -61,8 +63,10 @@ export function useAuth(isRegister?: boolean): AuthHook {
       nickname: nickname.value,
       id: randomId()
     })
-    authStatus.value?.success && await router.push('/chats')
-    resetForm()
+    if (authStatus.value.success) {
+      resetForm()
+      await router.push('/chats')
+    }
   })
 
   return {

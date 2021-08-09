@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io-client'
 import { DefaultEventsMap } from 'socket.io-client/build/typed-events'
-import { UserInterface } from '@/modules/chats/ChatsModule'
-import { StatusType } from '@/modules/store/AuthTypes'
+import { UserInterface } from '@/models/chats/UserInterfaces'
+import { StatusType } from '@/models/store/AuthTypes'
 
 interface ISocket extends Socket {
   userId?: string

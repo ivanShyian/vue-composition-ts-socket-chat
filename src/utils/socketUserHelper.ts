@@ -1,4 +1,4 @@
-import {UserSocketInterface} from '@/modules/chats/ChatsModule'
+import {UserSocketInterface} from '@/models/chats/UserInterfaces'
 
 interface ItemOfUserSocketInterface {
   [key: string]: UserSocketInterface
@@ -12,7 +12,12 @@ export function handleUsers(
 ): ItemOfUserSocketInterface | Record<never, string> {
   if (users) {
     if (Object.keys(containedUsers).length) {
-      return sortAndConvertArrayToObject(setWrapperToEveryUser(compareIncludedUsersWithNewUsers(containedUsers, users, chatList), socketID))
+      return sortAndConvertArrayToObject(
+        setWrapperToEveryUser(
+          compareIncludedUsersWithNewUsers(
+            containedUsers, users, chatList), socketID
+        )
+      )
     }
     return sortAndConvertArrayToObject(setWrapperToEveryUser(users, socketID))
   }
@@ -50,8 +55,8 @@ function sortAndConvertArrayToObject(array: any[]) {
   return array.sort((a: any, b: any) => {
     if (a.userSelf) return -1
     if (b.userSelf) return 1
-    if (a.username < b.username) return -1
-    return a.username > b.username ? 1 : 0
+    if (a.nickname < b.nickname) return -1
+    return a.nickname > b.nickname ? 1 : 0
   }).reduce((acc: ItemOfUserSocketInterface | Record<never, string>, current: any) => {
     return {...acc, ...current}
   }, {})

@@ -8,7 +8,7 @@ import {
   ComputedRef, VNode
 } from 'vue'
 import {useStore} from 'vuex'
-import {UserInterface} from '@/modules/chats/ChatsModule'
+import {UserInterface} from '@/models/chats/UserInterfaces'
 
 export default defineComponent({
   setup(_, context) {

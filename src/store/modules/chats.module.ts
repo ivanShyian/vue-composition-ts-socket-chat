@@ -1,38 +1,12 @@
 import {Module} from 'vuex'
 import {handleUsers} from '@/utils/socketUserHelper'
-import {NewMessageObjectInterface} from '@/modules/chats/ChatsInterfaces'
-import Firebase from '@/utils/Firebase'
+import {
+  ChatListResponse,
+  NewMessageObjectInterface,
+  OneChatInterface
+} from '@/models/chats/ChatsInterfaces'
 import {axiosBase} from '@/axios/request'
 import {AxiosResponse} from 'axios'
-
-const firebase = new Firebase()
-
-interface OneChatInterface {
-  [key: string]: {
-    nickname: string
-    messages: [{
-      [key: string]: any
-    }]
-  }
-}
-
-interface ChatListItemInterface {
-  chatUser: string | {
-    email: string
-    id: string
-    nickname?: string
-  }
-  message: string | null
-  nickname: string
-  time: number
-}
-
-interface ChatListResponse {
-  lastMessages: ChatListItemInterface[] | null
-  chatsCollection: {
-    [key: string]: string
-  }
-}
 
 interface StateChats {
   chats: OneChatInterface | Record<string, any>
@@ -57,13 +31,13 @@ const module: Module<StateChats, StateChats> = {
       state.chats = handleUsers(users, userId, state.chats, state.chatList)
     },
     addMessagesToExactChat(state, payload) {
-      const userName = payload.databaseID === state.chats.userSelf.userDatabaseID ? 'userSelf' : 'user_' + payload.databaseID
-      const messages = payload.result
-        ? Object.keys(payload.result).map((message: any) => (payload.result[message]))
+      const databaseId = payload.databaseID === state.chats.userSelf.userDatabaseID ? 'userSelf' : 'user_' + payload.databaseID
+      const messages = payload.data
+        ? Object.keys(payload.data).map((message: any) => (payload.data[message]))
         : []
 
-      state.chats[userName] = {
-        ...state.chats[userName],
+      state.chats[databaseId] = {
+        ...state.chats[databaseId],
         messages
       }
     },
@@ -77,18 +51,20 @@ const module: Module<StateChats, StateChats> = {
         state.chats = {...state.chats, [chatName]: user}
       }
     },
-    setLastMessages(state, chats) {
-      if (!chats) {
+    setLastMessages(state, payload) {
+      if (!payload && Object.keys(payload).length) {
         return
       }
+
+      const {nickname, data: chats} = payload
+
       chats.forEach((chat: any) => {
-        console.log({chat})
-        const chatName = chat.chatUser === 'self' ? 'userSelf' : chat.chatUser.id
+        const chatName = chat.chatUser === 'self' ? 'userSelf' : `user_${chat.chatUser.id}`
         const databaseID = chat.databaseID || chat.chatUser.id
         const message = {
           message: chat.message || '',
           time: chat.time || null,
-          nickname: 'some',
+          nickname: chat.nickname || nickname,
           databaseID
         }
 
@@ -102,17 +78,16 @@ const module: Module<StateChats, StateChats> = {
           [chatName]: {
             userDatabaseID: databaseID,
             lastMessage: message,
-            username: chat.chatUser.nickname ?? null
+            nickname: chat.chatUser.nickname || nickname
           }
         }
       })
     },
     mutateChats(state, payload) {
-      const {content, from, socketId, to, toDatabaseId, lastMessage = false}: {
+      const {content, from, socketId, toDatabaseId, lastMessage = false}: {
         content: any
         from: string
         socketId: string
-        to: string
         toDatabaseId: string
         lastMessage: boolean
       } = payload
@@ -173,21 +148,21 @@ const module: Module<StateChats, StateChats> = {
       commit('mutateChats', message)
     },
     async fetchChatList({commit, rootGetters}): Promise<void> {
-      const {uid, id} = rootGetters['auth/userData']
+      const {uid, id, nickname} = rootGetters['auth/userData']
       try {
-        const {data}: AxiosResponse<ChatListResponse> = await axiosBase.post('/chats/list', JSON.stringify({
+        const {data}: AxiosResponse<ChatListResponse> = await axiosBase.post('/messages/all', JSON.stringify({
           uid,
           id
         }))
         if (data.lastMessages) {
-          commit('setLastMessages', data.lastMessages)
+          commit('setLastMessages', {data: data.lastMessages, nickname})
           commit('setExistedChatsList', data.chatsCollection)
         }
       } catch (e) {
         console.error(e.message | e)
       }
     },
-    async sendMessageAndEmitSocket({commit, dispatch, rootGetters, getters}, message: NewMessageObjectInterface) {
+    async sendMessageAndEmitSocket({commit, dispatch, rootGetters, getters}, message: NewMessageObjectInterface): Promise<void> {
       const {content, toDatabaseId, fromSelf, to} = message as NewMessageObjectInterface
 
       dispatch('socket/sendMessageSocket', {content, fromSelf, to}, {root: true})
@@ -199,20 +174,42 @@ const module: Module<StateChats, StateChats> = {
         lastMessage: true
       })
 
-      await firebase.sendMessage(content, getters.chatIdByUserDatabaseId(toDatabaseId))
+      try {
+        const id = getters.chatIdByUserDatabaseId(toDatabaseId)
+        const {data} = await axiosBase.post('messages/send', JSON.stringify({
+          content,
+          id
+        }))
+        if (!data.state) {
+          throw new Error('Message wasn\'t saved to database')
+        }
+      } catch (e) {
+        console.warn(e)
+      }
     },
-    async fetchMessagesByChat({dispatch, commit}, payload) {
-      const result = await dispatch('auth/fetchChat', payload.chatId, {root: true})
-      commit('addMessagesToExactChat', {databaseID: payload.databaseID, result})
+    async fetchMessagesByChat({commit}, payload) {
+      try {
+        const {data} = await axiosBase.get(`messages/get/${payload.chatId}`)
+        console.log(data)
+        if (!data) {
+          throw new Error('Internal error')
+        }
+        if (data) {
+          commit('addMessagesToExactChat', {databaseID: payload.databaseID, data})
+        }
+      } catch (e) {
+        console.error(e.message || e)
+      }
     },
     clearState({commit}) {
       commit('clearChatsState')
     }
   },
   getters: {
-    currentChat: (state) => (id: string) => {
-      const nickname = state.chats && Object.keys(state.chats).find((chat: any) => state.chats[chat].username === id)
-      return nickname ? state.chats[nickname] : {}
+    currentChat: (state) => (nickname: string) => {
+      const databaseId = state.chats && Object.keys(state.chats)
+        .find((chat: any) => state.chats[chat].nickname === nickname)
+      return databaseId ? state.chats[databaseId] : {}
     },
     allChats: (state) => {
       return state.chats
