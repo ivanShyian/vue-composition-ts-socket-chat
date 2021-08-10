@@ -11,6 +11,7 @@ import {AxiosResponse} from 'axios'
 interface StateChats {
   chats: OneChatInterface | Record<string, any>
   hasNewMessage: boolean,
+  foundResult: any[],
   chatList: {
     [key: string]: string
   }
@@ -22,6 +23,7 @@ const module: Module<StateChats, StateChats> = {
     return {
       chats: {},
       chatList: {},
+      foundResult: [],
       hasNewMessage: false
     }
   },
@@ -132,6 +134,9 @@ const module: Module<StateChats, StateChats> = {
       state.chats = {}
       state.chatList = {}
       state.hasNewMessage = false
+    },
+    setSearchedResults(state, payload) {
+      state.foundResult = payload
     }
   },
   actions: {
@@ -190,12 +195,21 @@ const module: Module<StateChats, StateChats> = {
     async fetchMessagesByChat({commit}, payload) {
       try {
         const {data} = await axiosBase.get(`messages/get/${payload.chatId}`)
-        console.log(data)
         if (!data) {
           throw new Error('Internal error')
         }
         if (data) {
           commit('addMessagesToExactChat', {databaseID: payload.databaseID, data})
+        }
+      } catch (e) {
+        console.error(e.message || e)
+      }
+    },
+    async searchChats({commit}, query) {
+      try {
+        const {data} = await axiosBase.post('search/chats', {query})
+        if (data) {
+          commit('setSearchedResults', data)
         }
       } catch (e) {
         console.error(e.message || e)
@@ -219,6 +233,9 @@ const module: Module<StateChats, StateChats> = {
     },
     chatIdByUserDatabaseId: (state) => (id: string) => {
       return state.chatList[id]
+    },
+    searchedResultsList: (state) => {
+      return state.foundResult
     }
   }
 }

@@ -23,10 +23,13 @@ export default defineComponent({
       (document.querySelector('html') as HTMLHtmlElement).classList.add('dark')
     }
 
-    // TODO temporary returning statement
     const activeLayout = computed((): string => {
+      if (route.meta.auth === undefined) {
+        return 'main'
+      }
       return route.meta.auth ? 'main' : 'login'
     })
+
     return {
       activeLayout
     }
