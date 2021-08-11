@@ -25,28 +25,17 @@
           name="search"
           autocomplete="off"
           class="rounded-md bg-gray-600 focus:outline-none py-0.5 input-transition"
-          :class="showInput ? 'pl-8 pr-2 w-72' : 'w-0'"
+          :class="showInput ? 'pl-8 pr-2 w-64 sm:w-40 md:w-0 xl:w-80' : 'w-0'"
           :value="searchValue"
           @focus="focusedInput = true"
           @input="searchChats($event)"
           @blur="handleInputDisplay(false)"
         >
       </label>
-      <div
-        v-if="focusedInput && searchedResults.length"
-        class="absolute w-72 bg-gray-600 px-2 py-1 rounded-md left-0 top-full mt-0.5 shadow-xl"
-      >
-        <p
-          v-for="(result, i) in searchedResults"
-          :key="i"
-          @click="createChat(result)"
-          class="pb-1.5 pl-1 py-1.5 border-b border-white border-opacity-10 text-lg searched-result"
-        >{{result}}</p>
-      </div>
     </div>
     <span
       v-if="$route.meta.auth !== undefined"
-      class="-ml-2 text-xl md:text-2xl text-white font-bold font-mono gradient-animation cursor-pointer"
+      class="ml-10 md:ml-4 text-xl md:text-2xl text-white font-bold font-mono gradient-animation cursor-pointer"
     >isCHAT?</span>
     <button
       id="powerOffButton"
@@ -71,7 +60,7 @@
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, onMounted, onUnmounted, ref} from 'vue'
+import {computed, defineComponent, onMounted, watch, ref} from 'vue'
 import {useStore} from 'vuex'
 import {useRouter} from 'vue-router'
 
@@ -84,7 +73,13 @@ export default defineComponent({
     const searchValue = ref('')
     const searchInput = ref(null) // is template $ref
     const focusedInput = ref(false)
-    const searchedResults = computed(() => store.getters['chats/searchedResultsList'])
+    const searchedResults = computed(() => store.getters['search/searchedResultsList'])
+
+    watch(searchValue, (value, previousValue) => {
+      if (value === '') {
+        store.commit('search/setSearchedResults', [])
+      }
+    })
 
     onMounted(() => {
       const powerButton = document.querySelector('#powerOffButton') as HTMLElement
@@ -138,7 +133,10 @@ export default defineComponent({
       searchValueHandler(e)
       const value = (e.target as HTMLInputElement).value
       if (value) {
-        await store.dispatch('chats/searchChats', value)
+        await store.dispatch('search/searchChats', value)
+      }
+      if (!value.length) {
+        store.commit('search/setChatSearchStatus', false)
       }
     }
 

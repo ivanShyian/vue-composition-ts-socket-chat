@@ -59,7 +59,7 @@ export default defineComponent({
       return cardItem.value.lastMessage
     })
 
-    const lastMessageContent = computed(() => lastMessage.value?.message)
+    const lastMessageContent = computed(() => lastMessage.value?.message || '')
     const lastMessageTime = computed(() => lastMessage.value?.time ? getHoursAndMinutes(lastMessage.value.time) : '')
 
     return {
