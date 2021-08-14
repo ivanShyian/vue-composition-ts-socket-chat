@@ -1,7 +1,11 @@
 import {ComputedRef, ref, nextTick, watch} from 'vue'
 import {useRoute} from 'vue-router'
 
-export function useScrollBottom(chatIsAvailable: ComputedRef<boolean>): void {
+interface ReturnStatementInterface {
+  immediatelyScrollToBottom: () => Promise<void>
+}
+
+export function useScrollBottom(chatIsAvailable: ComputedRef<boolean>, showChat: ComputedRef<boolean>): ReturnStatementInterface {
   const route = useRoute()
 
   const scrollBottom = (): void => {
@@ -12,18 +16,25 @@ export function useScrollBottom(chatIsAvailable: ComputedRef<boolean>): void {
     }
   }
 
+  const immediatelyScrollToBottom = async() => {
+    await nextTick(() => scrollBottom())
+  }
+
   /* Scrolling bottom after every chat changing */
   watch(() => route.path, async(currentRoute, previousRoute) => {
-    if (previousRoute && currentRoute !== previousRoute) {}
-    if (previousRoute && currentRoute !== previousRoute && chatIsAvailable.value) {
-      await nextTick(() => scrollBottom())
+    if (previousRoute && currentRoute !== previousRoute && chatIsAvailable.value && showChat.value) {
+      await immediatelyScrollToBottom()
     }
   }, {immediate: true})
 
   /* Scrolling bottom after entering to chat-box from Chats.vue && current chat is available */
-  watch(chatIsAvailable, async(value, previousValue) => {
+  watch(showChat, async(value, previousValue) => {
     if (value) {
-      await nextTick(() => scrollBottom())
+      await immediatelyScrollToBottom()
     }
   }, {immediate: true})
+
+  return {
+    immediatelyScrollToBottom
+  }
 }

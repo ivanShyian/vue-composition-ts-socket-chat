@@ -32,7 +32,7 @@ export default defineComponent({
       required: true
     }
   },
-  setup(props) {
+  setup(props, {emit}) {
     const store = useStore()
     const messageText: Ref<string> = ref('')
 
@@ -73,6 +73,7 @@ export default defineComponent({
       }
       store.dispatch('chats/sendMessageAndEmitSocket', newMessage)
       messageText.value = ''
+      emit('scroll')
     }
     return {
       messageText,

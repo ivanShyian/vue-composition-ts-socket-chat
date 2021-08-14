@@ -12,6 +12,7 @@
     <chat-box-main-input
       :chat="chat"
       :self="self"
+      @scroll="emit('chat:scroll')"
     />
   </div>
 </template>
@@ -41,6 +42,12 @@ export default defineComponent({
       type: Boolean,
       required: true,
       default: false
+    }
+  },
+  emits: ['chat:scroll'],
+  setup(_, {emit}) {
+    return {
+      emit
     }
   }
 })

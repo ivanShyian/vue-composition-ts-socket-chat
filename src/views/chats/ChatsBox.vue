@@ -5,6 +5,7 @@
         :chat="currentChat"
         :self="self"
         :show-chat="showChat"
+        @chat:scroll="immediatelyScrollToBottom"
       />
     </template>
     <template #sidebar>
@@ -53,19 +54,19 @@ export default defineComponent({
     })
 
     const chatIsAvailable = computed(() => currentChat.value && !!Object.keys(currentChat.value).length)
-
-    useScrollBottom(chatIsAvailable)
-    useChats('messages', currentChat)
-
     const showChat = computed(() => {
       return 'unfam' in currentChat.value || !!(('messages' in currentChat.value) && Array.isArray(currentChat.value.messages))
     })
+
+    const {immediatelyScrollToBottom} = useScrollBottom(chatIsAvailable, showChat)
+    useChats('messages', currentChat)
 
     return {
       self,
       currentChat,
       chatIsAvailable,
       getHoursAndMinutes,
+      immediatelyScrollToBottom,
       showChat
     }
   }
