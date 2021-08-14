@@ -31,6 +31,10 @@ const module: Module<StateSearchInterface, StateSearchInterface> = {
     },
     mutateSearchedResults(state, payload) {
       state.searchedChats = payload && Object.keys(payload).length ? {['user_' + payload.userDatabaseID]: payload} : {}
+    },
+    clearStateMutation(state) {
+      state.isSearching = false
+      state.searchedChats = {}
     }
   },
   actions: {
@@ -52,6 +56,9 @@ const module: Module<StateSearchInterface, StateSearchInterface> = {
     changeCurrentSearchedResults({getters, commit, dispatch}, payload) {
       const {data, specificValue = false}: {data: any, specificValue: boolean} = payload
       commit('mutateSearchedResults', specificValue ? data : getters.userByNickname(data))
+    },
+    clearState({commit}) {
+      commit('clearStateMutation')
     }
   },
   getters: {
@@ -72,10 +79,6 @@ const module: Module<StateSearchInterface, StateSearchInterface> = {
         }
       }
       return null
-    },
-    clearState(state) {
-      state.isSearching = false
-      state.searchedChats = {}
     }
   }
 }
