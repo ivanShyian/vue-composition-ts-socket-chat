@@ -86,6 +86,10 @@ export default class Firebase implements FirebaseInterface {
     }
   }
 
+  async logout(): Promise<void> {
+    return firebase.auth().signOut()
+  }
+
   public async getUserData(uid: string): Promise<FirebaseUser | undefined> {
     try {
       const {data} = await axiosBase.post('/user/me', JSON.stringify({uid}))

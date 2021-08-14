@@ -4,10 +4,11 @@
     <AuthWrapper/>
   </div>
 </template>
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import AuthNavbar from '@/components/auth/AuthNavbar'
 import AuthWrapper from '@/components/auth/AuthWrapper'
-export default {
+export default defineComponent({
   components: {AuthWrapper, AuthNavbar}
-}
+})
 </script>

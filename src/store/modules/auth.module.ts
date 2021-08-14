@@ -136,6 +136,7 @@ const module: Module<StateAuth, StateAuth> = {
       dispatch('chats/clearState', '', {root: true})
       dispatch('socket/clearState', '', {root: true})
       dispatch('search/clearState', '', {root: true})
+      firebase.logout()
       return router.push('/login')
     }
   },
