@@ -9,13 +9,17 @@ import {
 } from 'vue'
 import {useStore} from 'vuex'
 import {UserInterface} from '@/models/chats/UserInterfaces'
+import {useRoute} from 'vue-router'
 
 export default defineComponent({
   setup(_, context) {
     const store = useStore()
+    const route = useRoute()
     const user: ComputedRef<UserInterface | null> = computed(() => store.getters['auth/userData'])
 
     onMounted(async(): Promise<void> => {
+      // Be save
+      if (['/login', '/register'].includes(route.path)) return
       await fetchUserDataAndConnectToSocket()
     })
 
