@@ -40,14 +40,25 @@ export default defineComponent({
     const route = useRoute()
 
     const self = computed(() => store.getters['chats/myUserData'])
-    const currentChat = computed(() => store.getters['chats/currentChat'](route.params.userID))
+    const userChatByNickname = computed(() => store.getters['chats/currentChat'](route.params.userID) || {})
+    const userSearchByNickname = computed(() => store.getters['search/userByNickname'](route.params.userID) || {})
+    const currentChat = computed(() => {
+      if (Object.keys(userChatByNickname.value).length) {
+        return userChatByNickname.value
+      }
+      if (Object.keys(userSearchByNickname.value).length) {
+        return userSearchByNickname.value
+      }
+      return {}
+    })
+
     const chatIsAvailable = computed(() => currentChat.value && !!Object.keys(currentChat.value).length)
 
     useScrollBottom(chatIsAvailable)
     useChats('messages', currentChat)
 
     const showChat = computed(() => {
-      return !!(('messages' in currentChat.value) && Array.isArray(currentChat.value.messages))
+      return 'unfam' in currentChat.value || !!(('messages' in currentChat.value) && Array.isArray(currentChat.value.messages))
     })
 
     return {

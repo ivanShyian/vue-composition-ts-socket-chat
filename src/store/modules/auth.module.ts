@@ -135,7 +135,8 @@ const module: Module<StateAuth, StateAuth> = {
       commit('logout')
       dispatch('chats/clearState', '', {root: true})
       dispatch('socket/clearState', '', {root: true})
-      router.push('/login')
+      dispatch('search/clearState', '', {root: true})
+      return router.push('/login')
     }
   },
   getters: {

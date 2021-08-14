@@ -10,7 +10,7 @@
       <chats-cards
         list="chats"
         :chats="chats"
-        :showText="!!searchedResults.length"
+        :showText="!!Object.keys(searchedResults).length"
         @choice="choiceChat"
       />
       <chats-cards

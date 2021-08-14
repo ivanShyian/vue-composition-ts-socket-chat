@@ -26,7 +26,7 @@ export function useChats(fetchingType: FetchingType, subscribedRef: UserDataType
   const hasChats = computed(() => !!Object.keys(chats.value).length)
 
   watch(subscribedRef, async(value, previousValue) => {
-    if (value && previousValue !== value) {
+    if (value && typeof value === 'object' && Object.keys(value).length && previousValue !== value) {
       await fetchHelper(fetchingType, previousValue, value, fetched)
     }
   }, {immediate: true})
@@ -65,19 +65,26 @@ export function useChats(fetchingType: FetchingType, subscribedRef: UserDataType
 
   async function fetchMessagesByChatId(computedUser: any) {
     const user = computedUser.value
+
     if (fetched.value) {
       return
     }
 
-    if (user && 'messages' in user && Array.isArray(user.messages)) {
+    if ((user && 'messages' in user) && Array.isArray(user.messages)) {
       return
     }
 
     const chatId = store.getters['chats/chatIdByUserDatabaseId'](user.userDatabaseID)
     if (chatId) {
       await store.dispatch('chats/fetchMessagesByChat', {chatId, databaseID: user.userDatabaseID})
-      fetched.value = true
     }
+    if (chatId === null) {
+      const waitedChatId = await new Promise((resolve, reject) => {
+        setTimeout(() => resolve(store.getters['chats/chatIdByUserDatabaseId'](user.userDatabaseID)), 1000)
+      })
+      await store.dispatch('chats/fetchMessagesByChat', {chatId: waitedChatId, databaseID: user.userDatabaseID})
+    }
+    fetched.value = true
     loadingSuccessful()
   }
 

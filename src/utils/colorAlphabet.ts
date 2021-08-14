@@ -1,7 +1,7 @@
 const colorMap: {
   [key: string]: string
 } = {
-  A: 'green-400',
+  A: 'indigo-400',
   B: 'gray-700',
   C: 'yellow-200',
   D: 'indigo-900',
@@ -12,7 +12,7 @@ const colorMap: {
   I: 'emerald-300',
   J: 'blue-200',
   K: 'emerald-500',
-  L: 'green-500',
+  L: 'indigo-500',
   M: 'indigo-600',
   N: 'red-700',
   O: 'yellow-800',

@@ -3,15 +3,16 @@ export interface UserInterface {
   email: string
   id: string
   uid: string
-  userDatabaseID: string
+  unfam?: boolean
   imgURL?: string
   status?: string
   lastOnline?: number
   chats?: any[]
+  userDatabaseID?: string
 }
 
-export interface UserSocketInterface {
+export interface UserSocketInterface extends UserInterface {
   userID: string
+  userDatabaseID: string
   username: string
-  userDatabaseID?: string
 }

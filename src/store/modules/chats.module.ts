@@ -7,6 +7,7 @@ import {
 } from '@/models/chats/ChatsInterfaces'
 import {axiosBase} from '@/axios/request'
 import {AxiosResponse} from 'axios'
+import {UserInterface, UserSocketInterface} from '@/models/chats/UserInterfaces'
 
 interface StateChats {
   chats: OneChatInterface | Record<string, any>
@@ -27,8 +28,17 @@ const module: Module<StateChats, StateChats> = {
   },
   mutations: {
     updateChats(state, payload) {
-      const {users, userId}: {users: [], userId: string} = payload
-      state.chats = handleUsers(users, userId, state.chats, state.chatList)
+      const {users, userId, newChat = false}: {users: UserSocketInterface[] | UserInterface[], userId?: string, newChat: boolean} = payload
+      if (newChat) {
+        const user = users[0]
+        delete user.unfam
+        state.chats = {...state.chats, ['user_' + user.userDatabaseID]: user}
+        return
+      }
+      if (!userId) {
+        return
+      }
+      state.chats = handleUsers(users, userId, state.chats as any, state.chatList)
     },
     addMessagesToExactChat(state, payload) {
       const databaseId = payload.databaseID === state.chats.userSelf.userDatabaseID ? 'userSelf' : 'user_' + payload.databaseID
@@ -42,7 +52,7 @@ const module: Module<StateChats, StateChats> = {
       }
     },
     addConnectedChat(state, payload) {
-      const {user}: {user: any} = payload
+      const {user}: {user: UserInterface} = payload
       const chatName = 'user_' + user.userDatabaseID
 
       if (chatName in state.chats) {
@@ -162,7 +172,12 @@ const module: Module<StateChats, StateChats> = {
         console.error(e.message | e)
       }
     },
-    async sendMessageAndEmitSocket({commit, dispatch, rootGetters, getters}, message: NewMessageObjectInterface): Promise<void> {
+    async sendMessageAndEmitSocket({
+      commit,
+      dispatch,
+      rootGetters,
+      getters
+    }, message: NewMessageObjectInterface): Promise<void> {
       const {content, toDatabaseId, fromSelf, to} = message as NewMessageObjectInterface
 
       dispatch('socket/sendMessageSocket', {content, fromSelf, to}, {root: true})
@@ -176,10 +191,7 @@ const module: Module<StateChats, StateChats> = {
 
       try {
         const id = getters.chatIdByUserDatabaseId(toDatabaseId)
-        const {data} = await axiosBase.post('messages/send', JSON.stringify({
-          content,
-          id
-        }))
+        const {data} = await axiosBase.post('messages/send', JSON.stringify({content, id}))
         if (!data.state) {
           throw new Error('Message wasn\'t saved to database')
         }
@@ -195,6 +207,28 @@ const module: Module<StateChats, StateChats> = {
         }
         if (data) {
           commit('addMessagesToExactChat', {databaseID: payload.databaseID, data})
+        }
+      } catch (e) {
+        console.error(e.message || e)
+      }
+    },
+    async addUserToChatList({state, commit}, payload) {
+      commit('updateChats', {
+        users: [payload.separated],
+        newChat: true
+      })
+
+      const {
+        separated: {userDatabaseID: userId},
+        me: {userDatabaseID: myUserId}
+      } = payload
+
+      try {
+        const {data} = await axiosBase.post('messages/add-chat', JSON.stringify({myUserId, userId}))
+        if (data.id) {
+          commit('setExistedChatsList', {
+            [userId]: data.id
+          })
         }
       } catch (e) {
         console.error(e.message || e)
@@ -217,7 +251,11 @@ const module: Module<StateChats, StateChats> = {
       return state.chats && state.chats.userSelf
     },
     chatIdByUserDatabaseId: (state) => (id: string) => {
-      return state.chatList[id]
+      if (Object.keys(state.chatList).length) {
+        return state.chatList[id]
+      } else {
+        return null
+      }
     }
   }
 }

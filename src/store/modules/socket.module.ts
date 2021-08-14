@@ -7,7 +7,7 @@ const module: Module<StateSocket, StateSocket> = {
   namespaced: true,
   state() {
     return {
-      socket: io('http://localhost:3001', {
+      socket: io(process.env.VUE_APP_BASE_URL, {
         autoConnect: false,
         path: '/socket-service/'
       })
@@ -85,13 +85,12 @@ const module: Module<StateSocket, StateSocket> = {
             to
           }, {root: true})
         })
-        // -upd
 
         // handleError
         state.socket.on('connect_error', (err) => {
           console.log(err)
           if (err.message === 'invalid username') {
-            // dispatch('auth/logoutAndGoToLoginPage', '', { root: true })
+            dispatch('auth/logoutAndGoToLoginPage', '', {root: true})
           }
         })
         commit('connectToSocket')

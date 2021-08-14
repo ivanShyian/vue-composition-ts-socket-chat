@@ -24,12 +24,13 @@
           type="search"
           name="search"
           autocomplete="off"
+          placeholder="Search by nickname..."
           class="rounded-md bg-gray-600 focus:outline-none py-0.5 input-transition"
-          :class="showInput ? 'pl-8 pr-2 w-64 sm:w-40 md:w-0 xl:w-80' : 'w-0'"
+          :class="showInput ? 'pl-8 pr-2 w-64 sm:w-40 md:w-64 xl:w-80' : 'w-0'"
           :value="searchValue"
-          @focus="focusedInput = true"
-          @input="searchChats($event)"
-          @blur="handleInputDisplay(false)"
+          @input="searchChatsHandler('search', $event)"
+          @focus="focusHandler"
+          @blur="handleBlur"
         >
       </label>
     </div>
@@ -62,11 +63,12 @@
 <script lang="ts">
 import {computed, defineComponent, onMounted, watch, ref} from 'vue'
 import {useStore} from 'vuex'
-import {useRouter} from 'vue-router'
+import {useRoute, useRouter} from 'vue-router'
 
 export default defineComponent({
   setup() {
     const store = useStore()
+    const route = useRoute()
     const router = useRouter()
     const appear = ref(false)
     const showInput = ref(false)
@@ -74,6 +76,8 @@ export default defineComponent({
     const searchInput = ref(null) // is template $ref
     const focusedInput = ref(false)
     const searchedResults = computed(() => store.getters['search/searchedResultsList'])
+
+    const myUserData = computed(() => store.getters['auth/userData'])
 
     watch(searchValue, (value, previousValue) => {
       if (value === '') {
@@ -104,6 +108,13 @@ export default defineComponent({
       appear.value = true
     }
 
+    function focusHandler() {
+      focusedInput.value = true
+      if (!searchValue.value) {
+        searchAll(myUserData.value)
+      }
+    }
+
     function searchValueHandler(e: Event) {
       if (!searchInput.value) {
         return
@@ -117,26 +128,44 @@ export default defineComponent({
     function handleInputDisplay(value: boolean) {
       if (value) {
         showInput.value = value
-        return
       }
-      if (!value && !searchValue.value.length) {
-        showInput.value = value
+      // if (!value && !searchValue.value.length) {
+      // }
+    }
+
+    function handleBlur() {
+      (searchInput.value! as HTMLElement).blur()
+      setTimeout(async() => {
+        await store.dispatch('search/changeCurrentSearchedResults', {data: route.params.userID})
+        focusedInput.value = false
+        showInput.value = false
         searchValue.value = ''
-        if (searchInput.value) {
-          (searchInput.value! as HTMLElement).blur()
-          focusedInput.value = false
-        }
+      }, 500)
+    }
+
+    function searchChatsHandler(type = 'search', e?: Event) {
+      switch (type) {
+        case 'search':
+          return e && searchChats(e, myUserData.value)
+        default:
+          return searchAll(myUserData.value)
       }
     }
 
-    async function searchChats(e: Event) {
+    async function searchChats(e: Event, me: {[key: string]: any | null}) {
       searchValueHandler(e)
       const value = (e.target as HTMLInputElement).value
-      if (value) {
-        await store.dispatch('search/searchChats', value)
+      if (value && typeof me === 'object') {
+        await store.dispatch('search/searchChats', {value, type: 'search', me})
       }
       if (!value.length) {
         store.commit('search/setChatSearchStatus', false)
+      }
+    }
+
+    async function searchAll(me: {[key: string]: any} | null) {
+      if (typeof me === 'object') {
+        await store.dispatch('search/searchChats', {value: '', type: 'all', me})
       }
     }
 
@@ -152,8 +181,10 @@ export default defineComponent({
     return {
       logout,
       handleInputDisplay,
-      searchChats,
+      searchChatsHandler,
       createChat,
+      focusHandler,
+      handleBlur,
       searchedResults,
       focusedInput,
       searchInput,
