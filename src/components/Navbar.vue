@@ -6,34 +6,7 @@
 <!--      <i class="far fa-sun relative z-10"></i>-->
 <!--      <i class="far fa-moon relative z-10"></i>-->
 <!--    </div>-->
-    <div
-      class="relative"
-      @mouseleave="handleInputDisplay(false)"
-    >
-      <i
-        @mouseenter="handleInputDisplay(true)"
-        class="fas fa-search text-lg ml-2 cursor-pointer relative z-10"
-      ></i>
-      <label
-        for="searchInput"
-        class="absolute top-0 left-0"
-      >
-        <input
-          id="searchInput"
-          ref="searchInput"
-          type="search"
-          name="search"
-          autocomplete="off"
-          placeholder="Search by nickname..."
-          class="rounded-md bg-gray-600 focus:outline-none py-0.5 input-transition"
-          :class="showInput ? 'pl-8 pr-2 w-64 sm:w-40 md:w-64 xl:w-80' : 'w-0'"
-          :value="searchValue"
-          @input="searchChatsHandler('search', $event)"
-          @focus="focusHandler"
-          @blur="handleBlur"
-        >
-      </label>
-    </div>
+    <TheSearchField/>
     <span
       v-if="$route.meta.auth !== undefined"
       class="ml-10 md:ml-4 text-xl md:text-2xl text-white font-bold font-mono gradient-animation cursor-pointer"
@@ -52,38 +25,19 @@
         class="fas fa-power-off cursor-pointer text-lg opacity-60 hover:opacity-100 transition-all duration-300"
       ></i>
     </button>
-    <teleport
-      v-if="focusedInput"
-      to="body">
-      <div class="h-full w-full bg-black bg-opacity-30 absolute top-0 bottom-0 left-0 right-0"></div>
-    </teleport>
   </div>
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, onMounted, watch, ref} from 'vue'
+import {defineComponent, onMounted, ref} from 'vue'
 import {useStore} from 'vuex'
-import {useRoute, useRouter} from 'vue-router'
+import TheSearchField from '@/components/ui/TheSearchField.vue'
 
 export default defineComponent({
+  components: {TheSearchField},
   setup() {
     const store = useStore()
-    const route = useRoute()
-    const router = useRouter()
     const appear = ref(false)
-    const showInput = ref(false)
-    const searchValue = ref('')
-    const searchInput = ref(null) // is template $ref
-    const focusedInput = ref(false)
-    const searchedResults = computed(() => store.getters['search/searchedResultsList'])
-
-    const myUserData = computed(() => store.getters['auth/userData'])
-
-    watch(searchValue, (value, previousValue) => {
-      if (value === '') {
-        store.commit('search/setSearchedResults', [])
-      }
-    })
 
     onMounted(() => {
       const powerButton = document.querySelector('#powerOffButton') as HTMLElement
@@ -108,88 +62,12 @@ export default defineComponent({
       appear.value = true
     }
 
-    function focusHandler() {
-      focusedInput.value = true
-      if (!searchValue.value) {
-        searchAll(myUserData.value)
-      }
-    }
-
-    function searchValueHandler(e: Event) {
-      if (!searchInput.value) {
-        return
-      }
-      if (searchInput.value && !(searchInput.value! as HTMLElement).classList.contains('w-0')) {
-        const target = e.target as HTMLInputElement
-        searchValue.value = target.value
-      }
-    }
-
-    function handleInputDisplay(value: boolean) {
-      if (value) {
-        showInput.value = value
-      }
-      // if (!value && !searchValue.value.length) {
-      // }
-    }
-
-    function handleBlur() {
-      (searchInput.value! as HTMLElement).blur()
-      setTimeout(async() => {
-        await store.dispatch('search/changeCurrentSearchedResults', {data: route.params.userID})
-        focusedInput.value = false
-        showInput.value = false
-        searchValue.value = ''
-      }, 500)
-    }
-
-    function searchChatsHandler(type = 'search', e?: Event) {
-      switch (type) {
-        case 'search':
-          return e && searchChats(e, myUserData.value)
-        default:
-          return searchAll(myUserData.value)
-      }
-    }
-
-    async function searchChats(e: Event, me: {[key: string]: any | null}) {
-      searchValueHandler(e)
-      const value = (e.target as HTMLInputElement).value
-      if (value && typeof me === 'object') {
-        await store.dispatch('search/searchChats', {value, type: 'search', me})
-      }
-      if (!value.length) {
-        store.commit('search/setChatSearchStatus', false)
-      }
-    }
-
-    async function searchAll(me: {[key: string]: any} | null) {
-      if (typeof me === 'object') {
-        await store.dispatch('search/searchChats', {value: '', type: 'all', me})
-      }
-    }
-
-    async function createChat(person: {[key: string]: any}) {
-      await store.dispatch('chats/createChat', person)
-      return router.push(`/chats/${person.nickname}`)
-    }
-
     function logout() {
       store.dispatch('auth/logoutAndGoToLoginPage')
     }
 
     return {
       logout,
-      handleInputDisplay,
-      searchChatsHandler,
-      createChat,
-      focusHandler,
-      handleBlur,
-      searchedResults,
-      focusedInput,
-      searchInput,
-      searchValue,
-      showInput,
       appear
     }
   }
