@@ -16,6 +16,7 @@ const module: Module<StateSearchInterface, StateSearchInterface> = {
   mutations: {
     setSearchedResults(state, searchResult) {
       if (searchResult?.length) {
+        state.searchedChats = {}
         searchResult.forEach((res: any) => {
           state.searchedChats = {
             ...state.searchedChats,
