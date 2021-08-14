@@ -2,6 +2,8 @@
 node_modules
 /dist
 
+.firebase/
+
 #firebaseConfig-config
 firebase-config.ts
 

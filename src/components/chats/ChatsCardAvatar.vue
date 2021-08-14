@@ -40,7 +40,7 @@ export default defineComponent({
     const getUserNameAvatarColor = computed(() => {
       const {userName} = props
       if (userName) {
-        return `bg-${getColorByWord(userName)}`
+        return getColorByWord(userName)
       }
       return 'bg-gray-600'
     })
