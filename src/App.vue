@@ -1,6 +1,9 @@
 <template>
-  <div class="bg-green-300 text-emerald-900 dark:text-blue-100 bg-blue-100 dark:bg-gray-700 color overflow-y-hidden h-screen">
-    <component :is="activeLayout + '-layout'"></component>
+  <div class="bg-green-300 text-emerald-900 dark:text-blue-100 bg-blue-100 dark:bg-gray-700 color overflow-y-hidden h-screen"
+  >
+    <template v-if="activeLayout">
+      <component :is="activeLayout + '-layout'"></component>
+    </template>
   </div>
 </template>
 
@@ -23,9 +26,9 @@ export default defineComponent({
       (document.querySelector('html') as HTMLHtmlElement).classList.add('dark')
     }
 
-    const activeLayout = computed((): string => {
+    const activeLayout = computed((): string | null => {
       if (route.meta.auth === undefined) {
-        return 'main'
+        return null
       }
       return route.meta.auth ? 'main' : 'login'
     })

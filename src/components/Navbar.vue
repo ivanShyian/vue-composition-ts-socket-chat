@@ -30,13 +30,13 @@
 
 <script lang="ts">
 import {defineComponent, onMounted, ref} from 'vue'
-import {useStore} from 'vuex'
 import TheSearchField from '@/components/ui/TheSearchField.vue'
+import {useRouter} from 'vue-router'
 
 export default defineComponent({
   components: {TheSearchField},
   setup() {
-    const store = useStore()
+    const router = useRouter()
     const appear = ref(false)
 
     onMounted(() => {
@@ -63,7 +63,7 @@ export default defineComponent({
     }
 
     function logout() {
-      store.dispatch('auth/logoutAndGoToLoginPage')
+      router.push('/login')
     }
 
     return {
