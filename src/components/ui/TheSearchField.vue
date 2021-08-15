@@ -6,6 +6,8 @@
     <i
       @mouseenter="handleInputDisplay(true)"
       class="fas fa-search text-lg ml-2 cursor-pointer relative z-10"
+      @click="handleInputDisplay(true)"
+      :class="{'hidden': hideField}"
     ></i>
     <label
       for="searchInput"
@@ -40,7 +42,13 @@ import {useStore} from 'vuex'
 import {useRoute} from 'vue-router'
 
 export default defineComponent({
-  props: {},
+  props: {
+    hideField: {
+      type: Boolean,
+      required: false,
+      default: false
+    }
+  },
   setup() {
     const store = useStore()
     const route = useRoute()

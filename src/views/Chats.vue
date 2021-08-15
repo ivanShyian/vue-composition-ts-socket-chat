@@ -1,5 +1,5 @@
 <template>
-  <div class="chats pt-12 md:pt-20 mx-2 md:mx-0 flex justify-between h-screen">
+  <div class="chats pt-12 pb-20 md:pt-12 md:pb-0 md:pt-20 mx-2 md:mx-0 flex justify-between h-screen">
     <chats-left
       v-show="requiredToShowCards"
       :loading="loading"

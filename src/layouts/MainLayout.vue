@@ -10,7 +10,7 @@
 <script>
 import Navbar from '@/components/Navbar'
 import UserAuth from '@/components/UserAuth'
-import {defineComponent} from 'vue'
+import {defineComponent, onMounted} from 'vue'
 
 export default defineComponent({
   components: {

@@ -6,10 +6,13 @@
 <!--      <i class="far fa-sun relative z-10"></i>-->
 <!--      <i class="far fa-moon relative z-10"></i>-->
 <!--    </div>-->
-    <TheSearchField/>
+    <TheSearchField
+      :hide-field="hideSearchButton"
+    />
     <span
       v-if="$route.meta.auth !== undefined"
       class="ml-10 md:ml-4 text-xl md:text-2xl text-white font-bold font-mono gradient-animation cursor-pointer"
+      :class="{'ml-16': hideSearchButton}"
     >isCHAT?</span>
     <button
       id="powerOffButton"
@@ -29,15 +32,20 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, onMounted, ref} from 'vue'
+import {computed, defineComponent, onMounted, ref} from 'vue'
 import TheSearchField from '@/components/ui/TheSearchField.vue'
-import {useRouter} from 'vue-router'
+import {useRoute, useRouter} from 'vue-router'
+import detectMob from '@/utils/isMobile'
 
 export default defineComponent({
   components: {TheSearchField},
   setup() {
+    const route = useRoute()
     const router = useRouter()
     const appear = ref(false)
+
+    const isMobileDevice = computed(() => detectMob())
+    const hideSearchButton = computed(() => route.name === 'ChatBox' && isMobileDevice.value)
 
     onMounted(() => {
       const powerButton = document.querySelector('#powerOffButton') as HTMLElement
@@ -67,6 +75,7 @@ export default defineComponent({
     }
 
     return {
+      hideSearchButton,
       logout,
       appear
     }
