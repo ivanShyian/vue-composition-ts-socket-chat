@@ -28,7 +28,7 @@ export function useAuth(isRegister?: boolean): AuthHook {
   const router: Router = useRouter()
   const authStatus = computed(() => store.getters['auth/authStatus'])
 
-  const {isSubmitting, handleSubmit, resetForm} = useForm()
+  const {isSubmitting, handleSubmit, resetForm, setFieldError} = useForm()
   const {errorMessage: emailError, value: email, handleBlur: emailBlur} = useField(
     'email',
     yup.string().required('Email is required').email('Wrong email')
@@ -41,7 +41,7 @@ export function useAuth(isRegister?: boolean): AuthHook {
   const {errorMessage: nicknameError, value: nickname, handleBlur: nicknameBlur} = useField(
     'nickname',
     isRegister
-      ? yup.string().required('Nickname is required').min(2).matches(/[a-zA-Z0-9]/, 'Nickname can only contain Latin letters.')
+      ? yup.string().required('Nickname is required').min(2).matches(/[a-zA-Z0-9]/, 'Nickname can only contain Latin letters')
       : yup.string().trim()
   )
 
@@ -54,18 +54,40 @@ export function useAuth(isRegister?: boolean): AuthHook {
       resetForm()
       await router.push('/chats')
     }
+
+    const {status, message} = authStatus.value.error
+    if (status) {
+      return message.toString().indexOf('password') !== -1
+        ? setFieldError('password', 'Wrong password. Try again')
+        : setFieldError('email', 'Wrong email. Try again')
+    }
   })
 
   const registerTo = handleSubmit(async(): Promise<void> => {
+    const response: {
+      approved: boolean,
+      message?: string
+    } = await store.dispatch('auth/checkNicknameBeforeRegister', nickname.value)
+    if (!response.approved) {
+      setFieldError('nickname', 'User with this nickname already exists')
+      return
+    }
     await store.dispatch('auth/register', {
       email: email.value,
       password: password.value,
       nickname: nickname.value,
       id: randomId()
     })
+
     if (authStatus.value.success) {
       resetForm()
-      await router.push('/chats')
+      router.push('/chats')
+      return
+    }
+
+    const {status, message} = authStatus.value.error
+    if (status) {
+      setFieldError('email', message.split(' ').splice(0, 7).join(' '))
     }
   })
 

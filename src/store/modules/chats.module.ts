@@ -8,6 +8,7 @@ import {
 import {axiosBase} from '@/axios/request'
 import {AxiosResponse} from 'axios'
 import {UserInterface, UserSocketInterface} from '@/models/chats/UserInterfaces'
+import router from '@/router'
 
 interface StateChats {
   chats: OneChatInterface | Record<string, any>
@@ -105,27 +106,31 @@ const module: Module<StateChats, StateChats> = {
       // socketId is myUser id
       const fromSelf: boolean = socketId === from
       const userSelf: boolean = toDatabaseId === content.databaseID
-      const receiver: string = userSelf
+      const receiverOrSender: string = userSelf
         ? 'userSelf'
         : fromSelf
           ? `user_${toDatabaseId}`
           : `user_${content.databaseID}`
 
-      if (Object.keys(state.chats).indexOf(receiver) !== -1) {
-        if ('messages' in state.chats[receiver]) {
-          state.chats[receiver].messages.push({...content, fromSelf})
-          if (lastMessage) {
-            state.chats[receiver].lastMessage = content
-          }
+      if (Object.keys(state.chats).indexOf(receiverOrSender) !== -1) {
+        if ('messages' in state.chats[receiverOrSender]) {
+          state.chats[receiverOrSender].messages.push({...content, fromSelf})
+          state.chats[receiverOrSender].lastMessage = content
           return
         }
-        state.chats[receiver] = {
-          ...state.chats[receiver],
-          messages: [{...content, fromSelf}]
+
+        const activePage = router.currentRoute.value.params.userID
+        const activeUser = !fromSelf && activePage && Object.keys(state.chats).find(chat => (
+          state.chats[chat].nickname === activePage
+        ))
+
+        if (activeUser === receiverOrSender) {
+          state.chats[receiverOrSender] = {
+            ...state.chats[receiverOrSender],
+            messages: [{...content, fromSelf}]
+          }
         }
-        if (lastMessage) {
-          state.chats[receiver].lastMessage = content
-        }
+        state.chats[receiverOrSender].lastMessage = content
       }
     },
     setExistedChatsList(state, payload) {

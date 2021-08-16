@@ -2,8 +2,9 @@ import {Module} from 'vuex'
 import {StatusType} from '@/models/store/AuthTypes'
 import {UserInterface} from '@/models/chats/UserInterfaces'
 import router from '@/router/index'
-import Firebase from '@/utils/Firebase'
+import Firebase, {FirebaseUser} from '@/utils/Firebase'
 import {axiosBase} from '@/axios/request'
+import {AxiosResponse} from 'axios'
 
 interface StateAuth {
   user: UserInterface | null,
@@ -56,13 +57,23 @@ const module: Module<StateAuth, StateAuth> = {
   actions: {
     async login({commit}, payload): Promise<void> {
       try {
-        const data = await firebase.login({
+        const data: undefined | {
+          user?: FirebaseUser
+          token?: string
+          error?: string
+        } = await firebase.login({
           email: payload.email,
           password: payload.password
         })
+
         if (!data) {
           return
         }
+
+        if (data.error) {
+          throw new Error(data.error)
+        }
+
         if (!data.user || !data.token) {
           return
         }
@@ -70,39 +81,65 @@ const module: Module<StateAuth, StateAuth> = {
         commit('setUserData', data.user)
         commit('setToken', data.token)
         commit('authStatusHandler', {
-          error: false,
+          error: {
+            status: false,
+            message: ''
+          },
           success: true
         })
       } catch (e) {
-        console.error(e.response?.data?.error?.message || e)
         commit('authStatusHandler', {
-          error: true,
+          error: {
+            status: true,
+            message: e.message
+          },
           success: false
         })
+        console.error(e.message)
       }
     },
     async register({dispatch, commit}, payload): Promise<void> {
       try {
-        // We didnt required to check all data passed to this function, because of yup keep it
+        // We didnt required to check all data passed to this function, because of yup keep it before
         const {data} = await axiosBase.post('/registration', ({
           email: payload.email,
           password: payload.password,
           nickname: payload.nickname,
           id: payload.id
         }))
+        if (!data.state) {
+          throw new Error(data || 'Something went wrong')
+        }
         if (data.state) {
           await dispatch('login', {
             email: payload.email,
             password: payload.password
           })
         }
-      } catch (e) {
-        console.error(e.response?.data?.error?.message || e)
         commit('authStatusHandler', {
-          error: true,
+          error: {
+            status: false,
+            message: ''
+          },
           success: false
         })
+      } catch (e) {
+        commit('authStatusHandler', {
+          error: {
+            status: true,
+            message: e.message
+          },
+          success: false
+        })
+        console.error(e.message)
       }
+    },
+    async checkNicknameBeforeRegister(_, nickname): Promise<{approved: boolean, message?: string}> {
+      const {data}: AxiosResponse<{
+        approved: boolean,
+        message?: string
+      }> = await axiosBase.post('/registration/check-credentials', {nickname})
+      return data
     },
     async fetchUserData({commit, dispatch}): Promise<UserInterface | undefined> {
       try {
@@ -117,8 +154,11 @@ const module: Module<StateAuth, StateAuth> = {
           })
         }
         commit('authStatusHandler', {
-          error: false,
-          success: false
+          error: {
+            status: false,
+            message: ''
+          },
+          success: true
         })
       } catch (e) {
         if (!e) {
@@ -126,7 +166,10 @@ const module: Module<StateAuth, StateAuth> = {
         }
         console.error(e.response?.data?.error?.message || e)
         commit('authStatusHandler', {
-          error: true,
+          error: {
+            status: true,
+            message: e
+          },
           success: false
         })
       }
@@ -143,9 +186,15 @@ const module: Module<StateAuth, StateAuth> = {
     }
   },
   getters: {
-    isAuth: (state): boolean => !!Object.keys(state.token).length,
-    authStatus: (state): StatusType => state.status,
-    userData: (state): UserInterface | null => state.user
+    isAuth(state): boolean {
+      return !!Object.keys(state.token).length
+    },
+    authStatus(state): StatusType {
+      return state.status
+    },
+    userData(state): UserInterface | null {
+      return state.user
+    }
   }
 }
 

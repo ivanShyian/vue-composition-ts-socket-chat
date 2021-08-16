@@ -19,14 +19,14 @@ interface FirebaseInterface {
   myUserDatabaseID: null | string
 }
 
-interface FirebaseUser {
+export interface FirebaseUser {
   email: string
   id: string
   nickname: string
   uid: string
 }
 
-interface FirebaseLoginInterface {
+export interface FirebaseLoginInterface {
   user: FirebaseUser
   token: string
 }
@@ -68,21 +68,27 @@ export default class Firebase implements FirebaseInterface {
     return userData
   }
 
-  public async login({email, password}: Credentials): Promise<undefined | FirebaseLoginInterface> {
+  public async login({
+    email,
+    password
+  }: Credentials): Promise<FirebaseLoginInterface | {error: string} | undefined> {
     try {
       if (!(email.length && password.length)) {
         throw new Error('All fields must be filled up')
       }
       await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-      const {user} = await this.__authenticateByEmail({email, password})
+      const response = await this.__authenticateByEmail({email, password})
 
-      if (user) {
-        const token = await this.__getTokenAndSetHeaders(user)
-        const databaseUser = await this.getUserData(user.uid) as FirebaseUser
+      if (response.user) {
+        const token = await this.__getTokenAndSetHeaders(response.user)
+        const databaseUser = await this.getUserData(response.user.uid) as FirebaseUser
         return {token, user: databaseUser}
+      } else {
+        throw new Error(response as any)
       }
     } catch (error) {
-      console.error(error.message | error)
+      const message = error.message
+      return {error: message || error}
     }
   }
 
@@ -109,6 +115,10 @@ export default class Firebase implements FirebaseInterface {
   }
 
   private __authenticateByEmail = async({email, password}: Credentials): Promise<firebase.auth.UserCredential> => {
-    return firebase.auth().signInWithEmailAndPassword(email, password)
+    try {
+      return await firebase.auth().signInWithEmailAndPassword(email, password)
+    } catch (e) {
+      return e
+    }
   }
 }
